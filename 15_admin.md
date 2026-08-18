@@ -1584,3 +1584,379 @@ is_active
 순서로 관리한다.
 
 이 문서는 앞으로 07~14 기획을 진행할 때 계속 확장한다.
+
+---
+
+# 31. 캐릭터 생활 관리
+
+출처: `07_character_life.md`
+
+`07_character_life.md` 상세기획이 확정되었으므로 본 섹션을 캐릭터 생활 어드민 관리 기준으로 사용한다. 위 `# 28. 향후 상세기획 추가 예정 영역`의 `07_character_life.md` 항목은 본 섹션으로 대체한다.
+
+## 31.1 생활 스탯 기본 설정
+
+플레이어 핵심 생활 스탯:
+
+```text
+ENERGY
+STRESS
+HAPPINESS
+```
+
+현재 기본 범위:
+
+```text
+0 ~ 100
+```
+
+어드민 관리 대상:
+
+```text
+life_stat_type
+min_value
+max_value
+status_range_min
+status_range_max
+status_label
+sort_order
+is_active
+```
+
+사용자에게는 숫자와 자연어 상태를 함께 보여준다.
+
+예:
+
+```text
+체력 78 · 여유 있음
+스트레스 62 · 조금 지침
+행복 84 · 만족스러움
+```
+
+## 31.2 업무강도/통근 생활영향
+
+관리 대상:
+
+- 업무강도별 체력 변화
+- 업무강도별 스트레스 변화
+- 통근시간 구간별 체력 변화
+- 통근시간 구간별 스트레스 변화
+- 통근/업무강도의 자유시간 보정
+- 회사/이벤트별 추가 생활부담 보정
+
+관리 구조 후보:
+
+```text
+impact_profile_id
+source_type
+source_key
+energy_delta
+stress_delta
+happiness_delta
+free_time_modifier
+```
+
+## 31.3 생활행동 마스터
+
+관리 필드 후보:
+
+```text
+life_action_id
+name
+category
+required_furniture_tags
+required_space_usage
+required_feature_tags
+required_energy
+required_free_time
+energy_delta
+stress_delta
+happiness_delta
+career_growth_delta
+auto_action_weight
+season_conditions
+weather_conditions
+time_conditions
+life_rhythm_conditions
+cooldown
+is_active
+```
+
+기본 카테고리:
+
+- 휴식
+- 자기계발
+- 건강
+- 취미
+- 생활
+
+행동 처리 알고리즘은 코드지만 각 행동의 조건/수치/가중치는 어드민으로 관리한다.
+
+## 31.4 자율행동 가중치/반복방지
+
+자율행동은 핵심 힐링 콘텐츠이므로 운영 중 반복감 조절이 가능해야 한다.
+
+관리 대상:
+
+- 행동별 기본 가중치
+- 스탯 구간별 가중치 보정
+- 평일/휴일 가중치 보정
+- 계절/날씨/시간대 가중치 보정
+- 동일 행동 반복 패널티
+- 동일 가구 반복 패널티
+- 미사용 공간/가구 보너스 가중치
+- 최근행동 기록 기준 개수
+- 행동별 최소 쿨다운
+- 생활씬별 최소 쿨다운
+
+관리 키 후보:
+
+```text
+recent_action_history_count
+same_action_repeat_penalty
+same_furniture_repeat_penalty
+unused_space_weight_bonus
+```
+
+현재 최근행동 기록 기준은 `3~5개`를 테스트 범위로 본다.
+
+## 31.5 자유시간
+
+자유시간은 내부 계산값으로 관리한다.
+
+관리 대상:
+
+- 기본 자유시간값
+- 업무강도 보정
+- 통근 보정
+- 생활환경 보정
+- 이벤트 보정
+- 자연어 상태 구간/문구
+
+사용자에게 직접 포인트값을 강조하지 않고 `넉넉함 / 보통 / 부족함` 등의 자연어 상태로 표시한다.
+
+## 31.6 계절 관리
+
+현재 기본 계절:
+
+```text
+SPRING
+SUMMER
+AUTUMN
+WINTER
+```
+
+관리 필드 후보:
+
+```text
+season_id
+name
+sort_order
+visual_profile_key
+behavior_weight_profile
+scene_pool_id
+is_active
+```
+
+계절 진행주기는 추후 `14_healing_social.md`에서 확정하며 본 문서에 추가한다.
+
+## 31.7 날씨 관리
+
+현재 후보:
+
+- 맑음
+- 흐림
+- 비
+- 눈
+
+관리 필드 후보:
+
+```text
+weather_id
+name
+weight
+allowed_seasons
+visual_profile_key
+behavior_weight_profile
+scene_pool_id
+is_active
+```
+
+실제 현실 날씨가 아니라 게임 내부 날씨를 사용한다.
+
+## 31.8 시간대 관리
+
+현재 후보:
+
+- 아침
+- 낮
+- 저녁
+- 밤
+
+관리 대상:
+
+- 시간대 코드/명칭
+- 생활씬 조건
+- 행동 가중치
+- 연출 프로필
+- 생활리듬과의 조합조건
+
+경제시간과 생활연출시간은 서로 다른 축으로 사용한다.
+
+## 31.9 평일/휴일 생활리듬
+
+현재 초기 가안:
+
+```text
+게임 1개월 = 현실 30분
+약 4개 생활주기
+생활주기 1개 ≈ 7.5분
+평일모드 약 5분
+휴일모드 약 2.5분
+```
+
+이 값은 테스트값이므로 어드민에서 조정 가능하게 한다.
+
+관리 필드 후보:
+
+```text
+life_rhythm_mode
+mode_name
+duration_seconds
+behavior_weight_profile
+scene_weight_profile
+is_active
+```
+
+현재 모드:
+
+```text
+WEEKDAY
+HOLIDAY
+```
+
+평일/휴일 전환 엔진 자체는 코드로 관리한다.
+
+## 31.10 조합 생활씬 상세 관리
+
+기존 `# 20. 생활씬/조합행동 관리`를 07 확정내용으로 보강한다.
+
+관리 필드 후보:
+
+```text
+life_scene_id
+name
+required_furniture_tags
+required_space_usage
+required_house_features
+season
+weather
+time_band
+life_rhythm_mode
+min_energy
+max_stress
+reward_energy
+reward_stress
+reward_happiness
+housing_satisfaction_reward
+first_discovery_reward
+repeat_reward_profile
+album_enabled
+cooldown
+priority
+is_active
+```
+
+정책:
+
+- 조합 생활씬은 일반 행동보다 더 높은 회복/행복 보상 가능
+- 첫 발견은 가장 큰 보상 + 생활앨범 등록 가능
+- 반복 발생은 보상을 낮추거나 쿨다운 적용
+- 직접 큰 현금보상을 지급하지 않음
+
+## 31.11 주거단계별 생활씬 해금
+
+새 집이 새로운 생활씬 세트를 여는 progression을 관리한다.
+
+관리 구조 후보:
+
+```text
+housing_progression_tier
+life_scene_id
+preview_enabled
+unlock_enabled
+priority
+```
+
+현재 기본 흐름:
+
+- 원룸: 바닥식사/작은 소파/책상 생활
+- 투룸: 독립 침실/본격 홈오피스
+- 쓰리룸·아파트: 취미방/드레스룸/홈짐/큰 거실
+- 자가: 욕조/본격 욕실·주방 시공 기반 생활씬
+- 프리미엄: 테라스/홈바/홈카페/대형 취미공간
+
+## 31.12 번아웃 관리
+
+관리 대상:
+
+- 발생 스트레스 임계값
+- 발생까지 필요한 지속기간
+- 회복 조건
+- 자기계발 효율 패널티
+- 커리어 이벤트 보정
+- 휴식행동 가중치
+- 상태 표시문구
+
+번아웃은 게임오버가 아니라 회복 가능한 약한 장기상태다.
+
+## 31.13 캐릭터 반응/대사 관리
+
+관리 콘텐츠:
+
+- 상태별 대사
+- 신규 가구 첫 사용 대사
+- 이사 직후 대사
+- 신규 공간 첫 반응
+- 생활씬 문구
+- 번아웃/회복 반응
+
+관리 필드 후보:
+
+```text
+reaction_id
+trigger_type
+trigger_key
+condition_profile
+copy
+weight
+cooldown
+is_first_time_only
+is_active
+```
+
+## 31.14 오프라인 생활 보정
+
+오프라인 처리 순서는 코드지만 다음 수치는 어드민 관리 가능하다.
+
+- 기본 직장 피로 보정
+- 통근 생활부담 보정
+- 생활환경 기본 회복 보정
+- 오프라인 생활요약 문구 풀
+
+오프라인에서는 특수 생활씬의 실제 발견을 자동 처리하지 않는다.
+
+## 31.15 07에서 코드로 유지할 항목
+
+다음은 어드민 데이터가 아니라 코드/엔진 영역이다.
+
+- 캐릭터 pathfinding
+- interaction point 이동 처리
+- 애니메이션 상태머신
+- 행동 우선순위 계산 알고리즘 자체
+- 생활씬 조건 매칭 엔진
+- 스탯 clamp 처리
+- 생활리듬 상태전환 엔진
+- 오프라인 생활 계산 처리순서
+- 저장/로드 구조
+
+단, 알고리즘이 사용하는 조건값/가중치/기간/보상값은 본 섹션의 어드민 데이터로 관리한다.
