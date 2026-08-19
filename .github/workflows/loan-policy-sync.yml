@@ -1,0 +1,644 @@
+name: One-time loan policy sync
+
+on:
+  push:
+    paths:
+      - .github/workflows/loan-policy-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Patch planning documents
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def read(path):
+              return Path(path).read_text(encoding='utf-8')
+
+          def write(path, text):
+              Path(path).write_text(text, encoding='utf-8')
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise RuntimeError(f'{label}: expected 1 match, got {count}')
+              return text.replace(old, new, 1)
+
+          # 00_master_policy.md — replace only the loan section.
+          p = '00_master_policy.md'
+          s = read(p)
+          pattern = r'# 16\. 대출\n.*?\n---\n\n# 17\. 이벤트'
+          replacement = '''# 16. 대출
+
+대출은 `미래의 가처분소득을 당겨 쓰는 수단`으로 정의한다.
+
+MVP 대출상품:
+- `JEONSE_LOAN`
+- `HOME_LOAN`
+
+전세대출:
+- 계약 중 월 이자만 납부
+- 계약 종료 시 반환된 보증금에서 대출원금 자동 정산
+
+주택담보대출:
+- 매월 원금 + 이자 상환
+- 기존 60~120개월 단축안은 사용하지 않음
+- MVP 기본 만기는 30년 고정을 우선
+- 일부상환/전액상환 가능
+- MVP 중도상환수수료 없음
+
+대출한도는 단순 주택가격 비율이 아니라 다음 두 조건을 모두 본다.
+
+```text
+최대대출
+= min(property_based_limit, affordability_based_limit)
+```
+
+상환능력 계산에는 기본 생활비, 주거 고정비, 보험/기타 고정비와 기존 대출상환액을 포함한다.
+
+또한 실제 보유현금과 자유롭게 쓸 수 있는 현금을 분리한다.
+
+```text
+spendable_cash
+= cash_balance - reserved_mandatory_expenses
+```
+
+다음 월세, 관리비, 기본 생활비, 보험/고정비, 대출상환 등 필수지출은 먼저 예약하고 가구·인테리어·투자·일반 소비는 `spendable_cash` 범위 안에서만 가능하게 한다.
+
+이직 시에도 기존 대출상환을 포함한 생활 가능 여부를 검사한다. 연봉이 낮아지는 이직 자체를 금지하지 않되 상환 후 최소 자유소득 안전선을 충족하지 못하면 이직 실행을 제한한다.
+
+일반 플레이에서는 대출실행·소비·이직 단계의 사전검증으로 연체/압류/파산/강제경매 상태가 생기지 않게 한다. 실직 시 기존 대출을 즉시 회수하거나 강제매도하지 않는다.
+
+집 매도 시 기존 주담대는 매도대금에서 자동정산하고 종료하며 대출 승계는 하지 않는다. 새 집에는 새 대출을 실행한다.
+
+세부 정책은 `11_loan.md`, 운영값은 `15_admin.md`를 기준으로 한다.
+
+---
+
+# 17. 이벤트'''
+          s2, n = re.subn(pattern, replacement, s, count=1, flags=re.S)
+          if n != 1:
+              raise RuntimeError(f'{p}: loan section match={n}')
+          write(p, s2)
+
+          # 01_economy_balance.md — add reserved/spendable cash policy and correct purchase-context copy.
+          p = '01_economy_balance.md'
+          s = read(p)
+          marker = '''## 11.2 수동 지출
+- 가구
+- 리모델링
+- 이사
+- 투자
+- 집 계약
+- 특별 이벤트 선택비용
+
+---
+
+# 12. 월간 정산에서 부업 수입을 보여준다'''
+          insert = '''## 11.2 수동 지출
+- 가구
+- 리모델링
+- 이사
+- 투자
+- 집 계약
+- 특별 이벤트 선택비용
+
+## 11.3 필수지출 예약과 사용 가능 현금
+
+수동 지출 가능 여부는 총 보유현금이 아니라 `spendable_cash`를 기준으로 판정한다.
+
+```text
+cash_balance
+= 실제 보유현금
+
+reserved_mandatory_expenses
+= 다음 월세 + 관리비 + 기본 생활비 + 보험/고정비 + 대출상환 등
+
+spendable_cash
+= cash_balance - reserved_mandatory_expenses
+```
+
+필수지출은 먼저 예약하며 가구·인테리어·투자·일반 소비는 `spendable_cash` 안에서만 가능하다.
+
+따라서 현금이 남아 보여도 다음 필수지출을 침범하는 구매는 막고, 부족액은 `사용 가능 현금` 기준으로 계산한다.
+
+세부 정책은 `11_loan.md`를 따른다.
+
+---
+
+# 12. 월간 정산에서 부업 수입을 보여준다'''
+          s = replace_once(s, marker, insert, p + ' section 11.3')
+          s = s.replace('현재 돈 2,650,000원', '사용 가능 현금 2,650,000원')
+          s = s.replace('대형 인테리어 역시 `현재 돈이 조금 부족할 때 기다리거나 부업으로 완성하는`', '대형 인테리어 역시 `사용 가능 현금이 조금 부족할 때 기다리거나 부업으로 완성하는`')
+          write(p, s)
+
+          # 02_real_estate.md — connect purchase eligibility to the finalized loan/affordability policy.
+          p = '02_real_estate.md'
+          s = read(p)
+          old = '''핵심:
+> 레벨이 올라서 집을 사는 것이 아니라 돈이 생겨서 집을 산다.
+
+---
+
+# 14. 계약 화면'''
+          new = '''핵심:
+> 레벨이 올라서 집을 사는 것이 아니라 돈이 생겨서 집을 산다.
+
+매매/전세에서 대출을 사용하는 경우 `11_loan.md`의 정책을 따른다.
+
+- 최대 대출은 `주택가격 기반 한도`와 `상환능력 기반 한도` 중 작은 값
+- 계약 후에도 최소 자유소득 안전선을 충족해야 함
+- 집 구매 화면에서 대출액, 계약 후 남는 현금, 월상환액, 예상 월 자유소득을 함께 표시
+- 최대 대출을 자동 실행하지 않고 가능한 범위 안에서 플레이어가 대출액을 조절하는 방향을 우선
+
+---
+
+# 14. 계약 화면'''
+          s = replace_once(s, old, new, p + ' loan linkage')
+          write(p, s)
+
+          # 03_career.md — add affordability check before job change execution.
+          p = '03_career.md'
+          s = read(p)
+          marker = '''정확한 기간/가중치는 `10_events.md`와 어드민에서 관리한다.
+
+---
+
+# 10. 첫 이직 시점'''
+          insert = '''정확한 기간/가중치는 `10_events.md`와 어드민에서 관리한다.
+
+## 9.4 이직 실행 전 기존 대출 상환능력 검사
+
+이직은 연봉만으로 허용 여부를 판단하지 않는다.
+
+기존 대출이 있다면 새 직장의 소득과 현재 주거비 기준으로 다음을 다시 계산한다.
+
+```text
+새 직장 정기소득
+- 기본 생활비
+- 주거 고정비
+- 보험/기타 고정비
+- 기존 대출상환액
+= 이직 후 자유소득
+```
+
+이 값이 `11_loan.md`의 최소 자유소득 안전선 이상이면 연봉이 낮아지는 이직도 허용한다.
+
+반대로 안전선을 충족하지 못하면:
+- 일반 이직 제안풀에서 제외하거나
+- 실제 이직 실행 단계에서 제한한다.
+
+향후에는 `대출 일부상환 또는 주거비 조정이 필요해요` 같은 목표형 안내를 제공할 수 있다.
+
+---
+
+# 10. 첫 이직 시점'''
+          s = replace_once(s, marker, insert, p + ' affordability')
+          write(p, s)
+
+          # 04_time_contract.md — month-boundary mandatory expenses are reserved before discretionary spending.
+          p = '04_time_contract.md'
+          s = read(p)
+          old = '''8. 월 단위 RANDOM/AUTO 이벤트 처리
+9. 다음 달 상태 생성
+'''
+          new = '''8. 월 단위 RANDOM/AUTO 이벤트 처리
+9. 다음 달 상태 생성
+
+다음 월의 월세·관리비·기본 생활비·보험/고정비·기존 대출상환액 등 확정 가능한 필수지출은 `reserved_mandatory_expenses`로 예약한다.
+
+일반 수동소비 가능액은 `cash_balance` 전체가 아니라 `spendable_cash = cash_balance - reserved_mandatory_expenses`를 사용한다. 계산·예약 엔진은 `11_loan.md`의 공통 경제 안전정책을 따른다.
+'''
+          s = replace_once(s, old, new, p + ' month boundary reservation')
+          write(p, s)
+
+          # 08_ads_sidejob.md — sidejob income is normal cash but never bypasses mandatory-expense protection.
+          p = '08_ads_sidejob.md'
+          s = read(p)
+          old = '''`광고머니`, `부업포인트` 같은 별도 재화는 만들지 않는다.
+
+---
+
+# 4. 부업의 두 가지 역할'''
+          new = '''`광고머니`, `부업포인트` 같은 별도 재화는 만들지 않는다.
+
+부업수입은 `cash_balance`에 들어가지만 일반 소비 가능 여부는 `11_loan.md`의 `spendable_cash` 정책을 따른다.
+
+즉 부업으로 현금이 늘어도 다음 월세·생활비·대출상환 등 예약된 필수지출을 침범해 사용할 수는 없다. 광고는 필수지출 보호를 우회하는 수단이 아니다.
+
+---
+
+# 4. 부업의 두 가지 역할'''
+          s = replace_once(s, old, new, p + ' spendable policy')
+          s = s.replace('현재 2,600,000원', '사용 가능 현금 2,600,000원')
+          s = s.replace('현재 50,600,000원', '사용 가능 현금 50,600,000원')
+          s = s.replace('현재 8,500,000원', '사용 가능 현금 8,500,000원')
+          write(p, s)
+
+          # 09_moving_inventory.md — shortage is based on spendable cash.
+          p = '09_moving_inventory.md'
+          s = read(p)
+          if '현재 현금 650,000원' not in s:
+              raise RuntimeError(p + ': expected move cash example not found')
+          s = s.replace('현재 현금 650,000원', '사용 가능 현금 650,000원', 1)
+          write(p, s)
+
+          # 15_admin.md — preserve the entire file and patch only loan-related admin inventory.
+          p = '15_admin.md'
+          s = read(p)
+          s = replace_once(s, '현재 00~10 기준으로 다음은 코드/기획 규칙으로 유지한다.', '현재 00~11 기준으로 다음은 코드/기획 규칙으로 유지한다.', p + ' scope')
+
+          anchor = '- 현재 주거단계보다 다음 단계 가구 일부를 미리 보여주는 progression 구조\n'
+          loan_code_rules = '''- 대출 월상환 계산 방식 자체
+- `spendable_cash` 계산 엔진
+- 필수지출 예약 처리 엔진
+- 대출한도 계산 엔진
+- 전세종료 원금정산 엔진
+- 집 매도 시 대출정산 엔진
+- 이직 시 기존대출 포함 상환가능성 검사 엔진
+- 순주택자산 계산 엔진
+'''
+          if loan_code_rules not in s:
+              s = replace_once(s, anchor, anchor + loan_code_rules, p + ' code rules')
+
+          old_loan_planned = '''- `11_loan.md`
+  - 대출상품
+  - 금리
+  - 한도
+  - 상환조건
+
+'''
+          if old_loan_planned not in s:
+              raise RuntimeError(p + ': planned loan block not found')
+          s = s.replace(old_loan_planned, '', 1)
+
+          p0_anchor = '- 핵심 이벤트 마스터/발생조건/후속체인\n'
+          p0_loan = '- 대출상품/금리/한도/상환능력/필수지출 예약 설정\n'
+          if p0_loan not in s:
+              s = replace_once(s, p0_anchor, p0_anchor + p0_loan, p + ' P0 loan')
+
+          if '# 35. 대출 상세 관리' in s:
+              raise RuntimeError(p + ': loan admin section already exists')
+
+          s = s.rstrip() + '''
+
+---
+
+# 35. 대출 상세 관리
+
+출처: `11_loan.md`
+
+`11_loan.md` V0.1 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
+
+## 35.1 대출상품 마스터
+
+MVP 상품:
+
+```text
+JEONSE_LOAN
+HOME_LOAN
+```
+
+관리 필드 후보:
+
+```text
+loan_product_id
+name
+loan_type
+eligible_contract_type
+is_active
+sort_order
+```
+
+MVP에서는 신용대출/가구대출을 사용하지 않는다.
+
+## 35.2 신규대출 금리
+
+기존대출은 실행 시 금리를 고정하고 시장금리 변화는 신규대출에만 반영한다.
+
+관리 필드 후보:
+
+```text
+loan_product_id
+new_loan_interest_rate
+effective_from
+effective_until
+is_active
+```
+
+기존대출 금리 재계산은 하지 않는다.
+
+## 35.3 주담대 기본기간
+
+현재 MVP 우선안:
+
+- `HOME_LOAN` 기본 만기: 30년
+
+관리 필드 후보:
+
+```text
+loan_product_id
+default_term_months
+allowed_term_months
+```
+
+현재 `default_term_months = 360`을 우선 사용한다.
+
+기존 60~120개월 게임용 단축안은 사용하지 않는다.
+
+향후 20년/30년/40년 선택을 도입하면 `allowed_term_months`로 관리한다.
+
+## 35.4 전세대출 이자형 정책
+
+현재 정책:
+
+- 계약 중 월 이자만 납부
+- 계약 종료 시 반환된 보증금에서 원금 자동정산
+
+관리 필드 후보:
+
+```text
+loan_product_id
+repayment_type
+interest_only_during_contract
+principal_settlement_trigger
+```
+
+권장 값 예:
+
+```text
+JEONSE_LOAN
+repayment_type = INTEREST_ONLY
+interest_only_during_contract = true
+principal_settlement_trigger = JEONSE_CONTRACT_END
+```
+
+원금정산 처리 자체는 코드다.
+
+## 35.5 주택가격 기반 한도
+
+관리 필드 후보:
+
+```text
+property_limit_profile_id
+loan_product_id
+contract_type
+housing_type
+region_group
+max_property_value_ratio
+minimum_equity_ratio
+is_active
+```
+
+최종 대출한도 계산식 자체는 코드다.
+
+## 35.6 상환능력 기반 한도
+
+관리 필드 후보:
+
+```text
+affordability_profile_id
+loan_product_id
+income_reference_type
+minimum_free_income
+minimum_free_income_ratio
+safety_buffer_amount
+safety_buffer_ratio
+is_active
+```
+
+최종 한도:
+
+```text
+min(property_based_limit, affordability_based_limit)
+```
+
+계산 엔진은 코드로 유지한다.
+
+## 35.7 최소 자유소득 / Safety Buffer
+
+대출 실행 후 생활가능성의 최소 안전선을 관리한다.
+
+관리 후보:
+
+```text
+minimum_free_income
+minimum_free_income_ratio
+safety_buffer_amount
+safety_buffer_ratio
+```
+
+정확한 초기값은 경제 progression 시뮬레이션으로 확정한다.
+
+## 35.8 필수지출 예약
+
+`reserved_mandatory_expenses`에 포함할 항목과 기준값을 관리한다.
+
+기본 대상:
+
+- 다음 월세
+- 관리비
+- 기본 생활비
+- 보험/기타 고정비
+- 전세대출 월이자
+- 주담대 월상환액
+- 이미 확정된 기타 필수 자동지출
+
+관리 구조 후보:
+
+```text
+mandatory_expense_type
+reservation_enabled
+calculation_profile_id
+priority
+is_active
+```
+
+예약/합산 처리 엔진 자체는 코드다.
+
+## 35.9 Spendable Cash 표시/임계값
+
+계산식:
+
+```text
+spendable_cash
+= cash_balance - reserved_mandatory_expenses
+```
+
+계산 자체는 코드다.
+
+어드민 관리 대상:
+
+- UI에 `보유현금`과 `사용 가능 현금`을 함께 표시할지 여부
+- 부족액 CTA 노출 임계값
+- 낮은 사용가능현금 경고 임계값
+- 경고/안내 문구
+
+관리 필드 후보:
+
+```text
+show_cash_balance
+show_spendable_cash
+low_spendable_cash_threshold
+shortage_cta_threshold
+warning_copy
+```
+
+## 35.10 신규대출 재직/소득 조건
+
+관리 필드 후보:
+
+```text
+loan_product_id
+minimum_months_in_company
+minimum_monthly_income
+allowed_employment_states
+blocked_state_ids
+is_active
+```
+
+실직/구직 상태에서 신규대출을 제한할 수 있으나 기존대출을 즉시 회수하지 않는다.
+
+## 35.11 이직 시 상환가능성 Threshold
+
+이직 실행 전 기존 대출상환을 포함한 affordability 검사를 한다.
+
+관리 필드 후보:
+
+```text
+job_change_affordability_enabled
+job_change_minimum_free_income
+job_change_minimum_free_income_ratio
+job_change_safety_buffer
+```
+
+연봉 감소 자체는 금지조건이 아니다.
+
+## 35.12 일부상환 / 전액상환
+
+관리 필드 후보:
+
+```text
+loan_product_id
+partial_repayment_enabled
+full_repayment_enabled
+minimum_partial_repayment_amount
+prepayment_fee_rate
+```
+
+현재 MVP 정책:
+
+- `HOME_LOAN` 일부상환 가능
+- `HOME_LOAN` 전액상환 가능
+- 중도상환수수료 없음
+
+일부상환에 사용할 수 있는 금액은 필수지출 예약을 침범하지 않도록 `spendable_cash` 범위 안에서 제한한다.
+
+## 35.13 집 매도/갈아타기 관련 관리값
+
+관리 후보:
+
+```text
+sale_cost_rate
+sale_fixed_cost
+estimated_sale_price_modifier
+```
+
+정산식 구조:
+
+```text
+매도가
+- 남은 주담대
+- 매도비용
+= 실제 회수현금
+```
+
+기존 대출 자동종료와 새집 신규대출 생성은 코드 규칙이다.
+
+## 35.14 대출 UI 문구/표시
+
+관리 대상:
+
+- 대출상품명/설명
+- 금리 표시문구
+- 월상환 표시문구
+- 계약 후 남는 현금 문구
+- 예상 월 자유소득 문구
+- 상환능력 부족 안내
+- 이직 제한 사유 안내
+- 일부상환/전액상환 안내
+
+집 구매 화면의 핵심 표시 항목:
+
+- 집값
+- 보유현금
+- 사용 가능 현금
+- 기존집 매도 예상 순자산
+- 대출액
+- 계약 후 남는 현금
+- 월상환액
+- 예상 월 자유소득
+
+## 35.15 대출 관련 KPI
+
+추적 후보:
+
+- 상품별 신규대출 실행률
+- 평균 대출비율
+- 대출 후 예상 자유소득 분포
+- 첫 자가 구매 시 평균 자기자본/대출 비율
+- 일부상환 이용률
+- 전액상환 이용률
+- 갈아타기 시 기존대출 정산규모
+- 이직 affordability 제한 발생률
+- 사용 가능 현금 부족으로 인한 구매 보류율
+- 부족액 CTA → 부업 전환율
+
+## 35.16 11에서 코드로 유지할 항목
+
+다음은 코드/엔진 영역이다.
+
+- 주담대 월상환 계산
+- 전세대출 월이자 계산
+- `spendable_cash` 계산
+- 필수지출 예약 처리
+- 주택가격 기반 대출한도 계산
+- 상환능력 기반 대출한도 계산
+- 최종 대출한도 계산
+- 전세종료 시 보증금 반환/원금정산
+- 집 매도 시 기존 주담대 정산
+- 일부/전액상환 처리
+- 이직 시 기존대출 포함 상환가능성 검사
+- 순주택자산 계산
+- 대출상태 생성/종료
+
+단, 엔진이 참조하는 금리, 기간, 비율, threshold, 안전선, 활성여부와 UI 문구는 본 섹션의 어드민 데이터로 관리한다.
+'''
+          write(p, s)
+
+          PY
+
+      - name: Commit synced planning docs
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No changes"
+            exit 0
+          fi
+          git config user.name "chatgpt-sync"
+          git config user.email "chatgpt-sync@users.noreply.github.com"
+          git add 00_master_policy.md 01_economy_balance.md 02_real_estate.md 03_career.md 04_time_contract.md 08_ads_sidejob.md 09_moving_inventory.md 15_admin.md
+          git commit -m "Sync finalized loan policy across planning docs"
+          git push origin HEAD:main
