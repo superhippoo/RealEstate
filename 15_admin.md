@@ -30,7 +30,7 @@
 → 15_admin.md의 캐릭터 생활 관리 섹션에 동시 반영
 ```
 
-따라서 이후 `07~14` 상세기획과 `15_admin.md`는 함께 업데이트한다.
+따라서 이후 상세기획과 `15_admin.md`는 함께 업데이트한다.
 
 ---
 
@@ -136,7 +136,7 @@ CONTRACT_FINAL_NOTICE_MONTHS
 
 # 5. 경제 밸런스 관리
 
-출처: `00_master_policy.md`, `01_economy_balance.md`, `10_events.md`
+출처: `00_master_policy.md`, `01_economy_balance.md`, `10_events.md`, `11_loan.md`
 
 ## 5.1 시작 자산
 
@@ -179,6 +179,8 @@ starting_cash
 
 자동지출 처리 순서 자체는 코드 로직이다.
 
+필수지출 예약 대상과 안전 임계값은 아래 `# 35. 대출 상세 관리`와 연결한다.
+
 ## 5.4 월 이벤트 발생률
 
 `10_events.md` 확정 기준:
@@ -202,7 +204,7 @@ max_important_choice_per_month
 
 # 6. 광고/부업 경제 관리
 
-출처: `00_master_policy.md`, `01_economy_balance.md`, `03_career.md`, `04_time_contract.md`, `05_furniture.md`, `08_ads_sidejob.md`
+출처: `00_master_policy.md`, `01_economy_balance.md`, `03_career.md`, `04_time_contract.md`, `05_furniture.md`, `08_ads_sidejob.md`, `11_loan.md`
 
 현재 정책상 부업 수입은 일반 게임머니이며 사용처 제한은 없다.
 
@@ -283,6 +285,8 @@ max_important_choice_per_month
 - 구매/계약 부족 상황에서는 맥락형 CTA 추가 노출
 - 이번 달 남은 부업으로 부족액 전체를 해결할 수 없어도 CTA 노출 가능
 - 여러 게임월 동안 부업 수입을 저축해 전세/자가 자기자본을 만드는 플레이 허용
+- 부업수입은 일반 현금이지만 수동소비 가능 여부는 `spendable_cash`를 따름
+- 부업수입으로 플레이어가 대출을 상환할 수 있으나 광고가 대출잔액을 직접 감소시키지는 않음
 
 ## 6.6 광고 노출 진입점
 
@@ -303,7 +307,7 @@ max_important_choice_per_month
 
 # 7. 직장/커리어 관리
 
-출처: `00_master_policy.md`, `01_economy_balance.md`, `03_career.md`, `10_events.md`
+출처: `00_master_policy.md`, `01_economy_balance.md`, `03_career.md`, `10_events.md`, `11_loan.md`
 
 ## 7.1 회사 마스터
 
@@ -449,6 +453,9 @@ bonus_profile
 - 제안 유지기간/만료정책
 - JOB_CHANGE 그룹 cooldown
 - PROMOTION 등 다른 event_group 이후 block/weight
+- 기존 대출 포함 이직 상환가능성 threshold
+
+세부 상환능력 threshold는 `# 35. 대출 상세 관리`를 따른다.
 
 ## 7.7 구조조정/퇴직 관련
 
@@ -468,6 +475,8 @@ bonus_profile
 - 구직기간 보정
 - 재취업 회사풀
 - 후속 이벤트 체인 조건
+
+실직 상태에서 신규대출 제한 가능 여부는 대출 관리설정을 따르며 기존 대출 즉시회수/강제매도는 코드 정책상 사용하지 않는다.
 
 ---
 
@@ -972,6 +981,8 @@ temporary_stay_restricted_action_ids
 - 매도비용/중개비
 - 예상 매도가 산식 보정
 - 매도 관련 세금/비용을 단순화해서 넣을 경우 해당 수치
+
+대출이 있는 자가의 예상 순자산/매도정산은 `11_loan.md`와 아래 `# 35`를 따른다.
 
 ---
 
@@ -1535,7 +1546,7 @@ is_active
 
 # 27. 어드민에서 별도로 관리하지 않을 확정 로직
 
-현재 00~10 기준으로 다음은 코드/기획 규칙으로 유지한다.
+현재 00~11 기준으로 다음은 코드/기획 규칙으로 유지한다.
 
 - 광고 수입은 일반 게임머니와 동일하게 취급
 - 광고로 월급/승진 직접 구매 불가
@@ -1568,6 +1579,18 @@ is_active
 - 일반 방의 용도는 가구배치를 기반으로 자동 인식
 - 전월세와 자가의 인테리어 권한 차등
 - 현재 주거단계보다 다음 단계 가구 일부를 미리 보여주는 progression 구조
+- 주담대 월상환 계산 방식 자체
+- 전세대출 월이자 계산 방식 자체
+- `spendable_cash` 계산 엔진
+- 필수지출 예약 처리 엔진
+- 주택가격 기반/상환능력 기반 대출한도 계산 엔진
+- 전세 종료 시 보증금 반환 및 대출원금 정산 엔진
+- 자가 매도 시 기존 주담대 정산 엔진
+- 이직 시 기존대출 포함 상환가능성 검사 엔진
+- 순주택자산 계산 엔진
+- 광고가 대출잔액을 직접 감소시키는 구조 금지
+- 일반 플레이에서 연체/압류/강제경매/파산 상태를 생성하지 않도록 사전방지
+- 실직 시 기존대출 즉시회수/강제매도 금지
 
 단, 위 정책의 `수치/대상/조건 범위`가 바뀔 필요가 있을 경우 해당 부분은 어드민 설정으로 분리할 수 있다.
 
@@ -1576,12 +1599,6 @@ is_active
 # 28. 향후 상세기획 추가 예정 영역
 
 아래 문서는 아직 상세기획 전이므로 어드민 관리항목은 상세 확정과 동시에 본 문서에 추가한다.
-
-- `11_loan.md`
-  - 대출상품
-  - 금리
-  - 한도
-  - 상환조건
 
 - `12_market_price.md`
   - 시장추세
@@ -1622,6 +1639,7 @@ is_active
 - 주거단계별 이사비
 - 가구 이동/보관 정책
 - 핵심 이벤트 마스터/발생조건/후속체인
+- 대출상품/신규금리/기간/한도/상환능력/필수지출 예약 설정
 
 ## P1 — 라이브 운영에 중요
 
@@ -1662,7 +1680,7 @@ is_active
 
 순서로 관리한다.
 
-이 문서는 앞으로 07~14 기획을 진행할 때 계속 확장한다.
+이 문서는 앞으로 상세기획을 진행할 때 계속 확장한다.
 
 ---
 
@@ -2042,7 +2060,7 @@ is_active
 
 # 32. 광고/부업 상세 관리
 
-출처: `08_ads_sidejob.md`
+출처: `08_ads_sidejob.md`, `11_loan.md`
 
 `08_ads_sidejob.md` 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
 
@@ -2117,6 +2135,8 @@ EVENT_COST
 ```
 
 이번 달 잔여 부업으로 부족액 전체를 해결할 수 없는 경우에도 CTA를 허용한다.
+
+부족액 판정의 기준 현금은 총 `cash_balance`가 아니라 `spendable_cash`다.
 
 ## 32.5 부업 콘텐츠
 
@@ -2249,7 +2269,7 @@ is_active
 
 # 33. 이사/보관함 상세 관리
 
-출처: `09_moving_inventory.md`
+출처: `09_moving_inventory.md`, `11_loan.md`
 
 `09_moving_inventory.md` 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
 
@@ -2276,6 +2296,8 @@ is_active
 - 프리미엄 주거
 
 조기이사 추가비용은 04 계약 시스템의 별도 값과 합산한다.
+
+이사비 부족액은 `spendable_cash`를 기준으로 판정한다.
 
 ## 33.2 가구 이동/보관 정책
 
@@ -2890,3 +2912,336 @@ fixed_max
 - 오프라인 이벤트 처리순서
 
 단, 엔진이 참조하는 기간, 확률, 조건, 가중치, 보상, 문구, 연결관계는 어드민에서 관리한다.
+
+---
+
+# 35. 대출 상세 관리
+
+출처: `11_loan.md`
+
+`11_loan.md` V0.1 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
+
+## 35.1 대출상품 마스터
+
+MVP 상품:
+
+```text
+JEONSE_LOAN
+HOME_LOAN
+```
+
+관리 필드 후보:
+
+```text
+loan_product_id
+name
+loan_type
+eligible_contract_type
+is_active
+sort_order
+```
+
+MVP에서는 신용대출/가구대출을 사용하지 않는다.
+
+## 35.2 신규대출 금리
+
+기존대출은 실행 시 금리를 고정하고 시장금리 변화는 신규대출에만 반영한다.
+
+관리 필드 후보:
+
+```text
+loan_product_id
+new_loan_interest_rate
+effective_from
+effective_until
+is_active
+```
+
+기존대출 금리 재계산은 하지 않는다.
+
+## 35.3 주담대 기본기간
+
+현재 MVP 우선안:
+
+- `HOME_LOAN` 기본 만기: 30년
+
+관리 필드 후보:
+
+```text
+loan_product_id
+default_term_months
+allowed_term_months
+```
+
+현재 `default_term_months = 360`을 우선 사용한다.
+
+기존 60~120개월 게임용 단축안은 사용하지 않는다.
+
+향후 20년/30년/40년 선택을 도입하면 `allowed_term_months`로 관리한다.
+
+## 35.4 전세대출 이자형 정책
+
+현재 정책:
+
+- 계약 중 월 이자만 납부
+- 계약 종료 시 반환된 보증금에서 원금 자동정산
+
+관리 필드 후보:
+
+```text
+loan_product_id
+repayment_type
+interest_only_during_contract
+principal_settlement_trigger
+```
+
+권장 값 예:
+
+```text
+JEONSE_LOAN
+repayment_type = INTEREST_ONLY
+interest_only_during_contract = true
+principal_settlement_trigger = JEONSE_CONTRACT_END
+```
+
+원금정산 처리 자체는 코드다.
+
+## 35.5 주택가격 기반 한도
+
+관리 필드 후보:
+
+```text
+property_limit_profile_id
+loan_product_id
+contract_type
+housing_type
+region_group
+max_property_value_ratio
+minimum_equity_ratio
+is_active
+```
+
+`property_based_limit`의 계산 엔진은 코드로 유지한다.
+
+## 35.6 상환능력 기반 한도
+
+관리 필드 후보:
+
+```text
+affordability_profile_id
+loan_product_id
+income_reference_type
+minimum_free_income
+minimum_free_income_ratio
+safety_buffer_amount
+safety_buffer_ratio
+is_active
+```
+
+최종 한도:
+
+```text
+maximum_loan
+= min(property_based_limit, affordability_based_limit)
+```
+
+`affordability_limit` 및 최종 한도 계산 엔진은 코드로 유지한다.
+
+## 35.7 Minimum Free Income / Safety Buffer
+
+대출 실행 후 생활가능성의 최소 안전선을 관리한다.
+
+관리 후보:
+
+```text
+minimum_free_income
+minimum_free_income_ratio
+safety_buffer_amount
+safety_buffer_ratio
+```
+
+정확한 초기값은 경제 progression 시뮬레이션으로 확정한다.
+
+## 35.8 Mandatory Expense Reservation
+
+`reserved_mandatory_expenses`에 포함할 항목과 기준값을 관리한다.
+
+기본 대상:
+
+- 다음 월세
+- 관리비
+- 기본 생활비
+- 보험/기타 고정비
+- 전세대출 월이자
+- 주담대 월상환액
+- 이미 확정된 기타 필수 자동지출
+
+관리 구조 후보:
+
+```text
+mandatory_expense_type
+reservation_enabled
+calculation_profile_id
+priority
+is_active
+```
+
+예약/합산 처리 엔진 자체는 코드다.
+
+## 35.9 Spendable Cash 표시/임계값
+
+계산식:
+
+```text
+spendable_cash
+= max(0, cash_balance - reserved_mandatory_expenses)
+```
+
+계산 자체는 코드다.
+
+어드민 관리 대상:
+
+- UI에 `보유현금`과 `사용 가능 현금`을 함께 표시할지 여부
+- 부족액 CTA 노출 임계값
+- 낮은 사용가능현금 경고 임계값
+- 경고/안내 문구
+
+관리 필드 후보:
+
+```text
+show_cash_balance
+show_spendable_cash
+low_spendable_cash_threshold
+shortage_cta_threshold
+warning_copy
+```
+
+## 35.10 신규대출 재직/소득 조건
+
+관리 필드 후보:
+
+```text
+loan_product_id
+minimum_months_in_company
+minimum_monthly_income
+allowed_employment_states
+blocked_state_ids
+is_active
+```
+
+실직/구직 상태에서 신규대출을 제한할 수 있으나 기존대출을 즉시 회수하지 않는다.
+
+## 35.11 이직 시 상환가능성 Threshold
+
+이직 실행 전 기존 대출상환을 포함한 affordability 검사를 한다.
+
+관리 필드 후보:
+
+```text
+job_change_affordability_enabled
+job_change_minimum_free_income
+job_change_minimum_free_income_ratio
+job_change_safety_buffer
+```
+
+연봉 감소 자체는 금지조건이 아니다.
+
+## 35.12 일부상환 / 전액상환
+
+관리 필드 후보:
+
+```text
+loan_product_id
+partial_repayment_enabled
+full_repayment_enabled
+minimum_partial_repayment_amount
+prepayment_fee_rate
+```
+
+현재 MVP 정책:
+
+- `HOME_LOAN` 일부상환 가능
+- `HOME_LOAN` 전액상환 가능
+- 중도상환수수료 없음
+
+일부상환에 사용할 수 있는 금액은 필수지출 예약을 침범하지 않도록 `spendable_cash` 범위 안에서 제한한다.
+
+## 35.13 집 매도/갈아타기 관련 관리값
+
+관리 후보:
+
+```text
+sale_cost_rate
+sale_fixed_cost
+estimated_sale_price_modifier
+```
+
+정산식 구조:
+
+```text
+매도가
+- 남은 주담대
+- 매도비용
+= 실제 회수현금
+```
+
+기존 대출 자동종료와 새집 신규대출 생성은 코드 규칙이다.
+
+## 35.14 대출 UI 문구/표시
+
+관리 대상:
+
+- 대출상품명/설명
+- 금리 표시문구
+- 월상환 표시문구
+- 계약 후 남는 현금 문구
+- 예상 월 자유소득 문구
+- 상환능력 부족 안내
+- 이직 제한 사유 안내
+- 일부상환/전액상환 안내
+
+집 구매 화면의 핵심 표시 항목:
+
+- 집값
+- 보유현금
+- 사용 가능 현금
+- 기존집 매도 예상 순자산
+- 대출액
+- 계약 후 남는 현금
+- 월상환액
+- 예상 월 자유소득
+
+## 35.15 대출 관련 KPI
+
+추적 후보:
+
+- 상품별 신규대출 실행률
+- 평균 대출비율
+- 대출 후 예상 자유소득 분포
+- 첫 자가 구매 시 평균 자기자본/대출 비율
+- 일부상환 이용률
+- 전액상환 이용률
+- 갈아타기 시 기존대출 정산규모
+- 이직 affordability 제한 발생률
+- 사용 가능 현금 부족으로 인한 구매 보류율
+- 부족액 CTA → 부업 전환율
+
+## 35.16 11에서 코드로 유지할 항목
+
+다음은 코드/엔진 영역이다.
+
+- 주담대 월상환 계산
+- 전세대출 월이자 계산
+- `spendable_cash` 계산
+- 필수지출 예약 처리
+- 주택가격 기반 대출한도 계산
+- 상환능력 기반 대출한도 계산
+- 최종 대출한도 계산
+- 전세종료 시 보증금 반환/원금정산
+- 집 매도 시 기존 주담대 정산
+- 일부/전액상환 처리
+- 이직 시 기존대출 포함 상환가능성 검사
+- 순주택자산 계산
+- 대출상태 생성/종료
+
+단, 엔진이 참조하는 금리, 기간, 비율, threshold, 안전선, 활성여부와 UI 문구는 본 섹션의 어드민 데이터로 관리한다.
