@@ -75,6 +75,7 @@
 - 기기 시간 조작 방지 로직
 - 자동배치 알고리즘
 - 공간 용도 자동인식 알고리즘 자체
+- 이벤트 후보추출/조건매칭/예약실행 알고리즘 자체
 
 단, 위 로직에서 사용하는 `기준값/임계값/기간/가중치`는 어드민으로 분리할 수 있다.
 
@@ -135,7 +136,7 @@ CONTRACT_FINAL_NOTICE_MONTHS
 
 # 5. 경제 밸런스 관리
 
-출처: `00_master_policy.md`, `01_economy_balance.md`
+출처: `00_master_policy.md`, `01_economy_balance.md`, `10_events.md`
 
 ## 5.1 시작 자산
 
@@ -180,19 +181,22 @@ starting_cash
 
 ## 5.4 월 이벤트 발생률
 
-현재 초기 가안:
+`10_events.md` 확정 기준:
 
-- 월 이벤트 발생률 40~60%
-
-이벤트 상세는 `10_events.md` 확정 시 이 문서에 세분화한다.
+- RANDOM 월 이벤트 발생률: 초기 약 40~60%
+- 중요한 CHOICE 이벤트: 한 게임월 0~1개를 기본 목표
+- SCHEDULED/FOLLOWUP 이벤트는 RANDOM 월 발생률과 별도로 처리
 
 관리 후보:
 
 ```text
-monthly_event_probability
-no_event_weight
+monthly_random_event_probability
+no_random_event_weight
 category_event_weights
+max_important_choice_per_month
 ```
+
+세부 이벤트 조건/관계/후속체인은 아래 `# 34. 이벤트 상세 관리`를 따른다.
 
 ---
 
@@ -299,7 +303,7 @@ category_event_weights
 
 # 7. 직장/커리어 관리
 
-출처: `00_master_policy.md`, `01_economy_balance.md`, `03_career.md`
+출처: `00_master_policy.md`, `01_economy_balance.md`, `03_career.md`, `10_events.md`
 
 ## 7.1 회사 마스터
 
@@ -401,9 +405,17 @@ bonus_profile
 재직기간 + 커리어 성장점수 + 업무/이벤트 결과
 ```
 
+현재 V0.1 이벤트 기간 시작값:
+
+- 첫 승진 자격검토: 최소 재직 12개월
+- 다음 승진 자격검토: 현재 career_level 최소 12개월 유지
+- PROMOTION → PROMOTION: 12개월 hard block
+- JOB_CHANGE → PROMOTION: 6개월 hard block
+
 어드민 관리 대상:
 
 - 최소 재직기간
+- 현재 career_level 최소 유지기간
 - 필요 career XP
 - 이벤트 가중치
 - 자기계발 가중치
@@ -412,12 +424,19 @@ bonus_profile
 - 승진 시 부업 가능량 변화
 - 승진 제안 노출조건
 - 승진 거절/유지 허용 여부
+- PROMOTION 그룹 cooldown
+- 다른 커리어 이벤트 그룹과의 block/weight 관계
 
 ## 7.6 이직 제안
 
 현재 첫 이직 테스트 범위:
 
 - 사회생활 약 12~24개월 이후
+
+현재 관계 시작값:
+
+- JOB_CHANGE → JOB_CHANGE: 12개월 hard block
+- PROMOTION → JOB_CHANGE: 3개월간 weight × 0.5 테스트
 
 어드민 관리 대상:
 
@@ -427,18 +446,28 @@ bonus_profile
 - 현재 직장 재직기간 조건
 - 제안 급여
 - 제안 업무강도/안정성/성장성
-- 제안 유지기간/만료정책은 이벤트 상세와 연동
+- 제안 유지기간/만료정책
+- JOB_CHANGE 그룹 cooldown
+- PROMOTION 등 다른 event_group 이후 block/weight
 
 ## 7.7 구조조정/퇴직 관련
 
-향후 10 이벤트 상세기획에서 세분화한다.
+`10_events.md` 확정 기준을 따른다.
 
-현재 어드민 후보:
+현재 V0.1 관계 시작값:
+
+- JOB_CHANGE → RESTRUCTURING_MAJOR: 3개월 hard block
+- RESTRUCTURING_MAJOR → RESTRUCTURING_MAJOR: 12개월 hard block
+
+어드민 대상:
 
 - 회사 안정성별 구조조정 발생확률
+- 구조조정 event_group cooldown
+- 다른 커리어 이벤트와의 block/weight 관계
 - 퇴직금 산정값
 - 구직기간 보정
 - 재취업 회사풀
+- 후속 이벤트 체인 조건
 
 ---
 
@@ -1506,7 +1535,7 @@ is_active
 
 # 27. 어드민에서 별도로 관리하지 않을 확정 로직
 
-현재 00~09 기준으로 다음은 코드/기획 규칙으로 유지한다.
+현재 00~10 기준으로 다음은 코드/기획 규칙으로 유지한다.
 
 - 광고 수입은 일반 게임머니와 동일하게 취급
 - 광고로 월급/승진 직접 구매 불가
@@ -1519,6 +1548,10 @@ is_active
 - 중요 의사결정 화면에서는 시간 정지
 - 오프라인에서 중요 선택 자동 확정 금지
 - PENDING 이벤트는 플레이어 확인 전 임의 소멸 금지
+- SCHEDULED/FOLLOWUP 이벤트는 RANDOM 월 발생확률과 별도로 도래 처리
+- 같은 중요 이벤트 체인의 중복 생성 제한
+- 이벤트 조건매칭/후속예약/악화판정 알고리즘 자체는 코드로 관리
+- 랜덤 이벤트로 집/가구/보증금 등 기존 성장의 영구손실 금지
 - 계약 만료 오프라인 발생 시 자동 재계약/강제퇴거 금지
 - TEMPORARY_STAY 만료 후 주거결정 전 시간 정지
 - 현재 거주 중인 유일한 자가는 다음 거주지 없이 단독 매도 불가
@@ -1543,12 +1576,6 @@ is_active
 # 28. 향후 상세기획 추가 예정 영역
 
 아래 문서는 아직 상세기획 전이므로 어드민 관리항목은 상세 확정과 동시에 본 문서에 추가한다.
-
-- `10_events.md`
-  - 이벤트 마스터
-  - 확률/가중치
-  - 선택지/결과
-  - 이벤트 큐
 
 - `11_loan.md`
   - 대출상품
@@ -1584,6 +1611,7 @@ is_active
 - 공통 시간/기간 설정
 - 경제 기본값
 - 직장/급여/업무강도
+- 커리어 최소기간/cooldown/이벤트 관계
 - 통근시간 테이블
 - 지역/부동산 가격지수
 - 주택유형/매물 생성값
@@ -1593,6 +1621,7 @@ is_active
 - 광고 부업 보상/횟수/노출 진입점
 - 주거단계별 이사비
 - 가구 이동/보관 정책
+- 핵심 이벤트 마스터/발생조건/후속체인
 
 ## P1 — 라이브 운영에 중요
 
@@ -1601,7 +1630,7 @@ is_active
 - 추천룰
 - 이사 직후 새집 추천룰
 - 생활씬 조합
-- 이벤트
+- 이벤트 신규 콘텐츠/밸런스
 - 밸런스 계수
 - 신규 회사/지역/가구/평면도 활성화
 
@@ -2430,3 +2459,434 @@ is_active
 - 가구 인스턴스 상태 저장
 
 단, 가구별 이동 가능 여부, 삭제 보호, 이사비, 추천조건, 문구 등은 어드민에서 관리한다.
+
+---
+
+# 34. 이벤트 상세 관리
+
+출처: `10_events.md`
+
+`10_events.md` 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
+
+## 34.1 이벤트 마스터
+
+관리 필드 후보:
+
+```text
+event_id
+name
+category
+event_type
+occurrence_type
+event_group
+priority
+condition_profile
+weight
+cooldown_months
+group_cooldown_months
+available_from
+available_until
+max_per_month
+max_lifetime
+blocks_same_event_chain
+is_negative_major
+is_positive_major
+is_active
+```
+
+`event_type`:
+
+```text
+AUTO
+RECORD
+CHOICE
+```
+
+`occurrence_type`:
+
+```text
+RANDOM
+SCHEDULED
+FOLLOWUP
+```
+
+## 34.2 RANDOM 월 이벤트 빈도
+
+현재 V0.1:
+
+- 월 RANDOM 이벤트 발생률 약 40~60%
+- 중요한 CHOICE는 게임월 0~1개 기본 목표
+- SCHEDULED/FOLLOWUP은 RANDOM 확률과 별도
+
+관리 대상:
+
+```text
+monthly_random_event_probability
+max_random_events_per_month
+max_important_choice_per_month
+scheduled_event_random_suppression_weight
+```
+
+예약 이벤트가 많은 달에는 일반 RANDOM 이벤트를 줄일 수 있다.
+
+## 34.3 이벤트 카테고리/그룹
+
+기본 카테고리:
+
+```text
+CAREER
+HOUSING
+LIFE
+ECONOMY
+REGION
+PROGRESSION
+```
+
+기본 event_group 후보:
+
+```text
+PROMOTION
+JOB_CHANGE
+RESTRUCTURING_MAJOR
+BONUS
+OVERTIME
+HOUSE_BREAKDOWN_MINOR
+HOUSE_BREAKDOWN_MAJOR
+HEALTH_MINOR
+REGION_CHANGE
+```
+
+신규 그룹은 어드민에서 추가/활성화 가능하다.
+
+## 34.4 커리어 이벤트 기간 기본값
+
+V0.1 시작값:
+
+| 관계 | 값 |
+|---|---:|
+| 첫 승진 자격검토 최소 재직기간 | 12개월 |
+| 다음 승진 자격검토 최소 career_level 유지기간 | 12개월 |
+| PROMOTION → PROMOTION | 12개월 hard block |
+| JOB_CHANGE → JOB_CHANGE | 12개월 hard block |
+| JOB_CHANGE → PROMOTION | 6개월 hard block |
+| PROMOTION → JOB_CHANGE | 3개월간 weight × 0.5 |
+| JOB_CHANGE → RESTRUCTURING_MAJOR | 3개월 hard block |
+| RESTRUCTURING_MAJOR → RESTRUCTURING_MAJOR | 12개월 hard block |
+
+모두 테스트값이며 운영 중 변경 가능해야 한다.
+
+## 34.5 이벤트 관계 테이블
+
+관리 구조:
+
+```text
+source_event_group
+target_event_group
+block_months
+modifier_months
+weight_modifier
+condition_profile
+is_active
+```
+
+목적:
+
+- 승진 직후 또 승진 방지
+- 이직 직후 또 이직 방지
+- 이직 직후 큰 구조조정 같은 불합리한 조합 완화
+- 이벤트 종류가 늘어나도 코드수정 없이 관계 추가
+
+## 34.6 발생조건 프로필
+
+조건으로 사용할 수 있는 항목:
+
+- company_id / company_type / company_tier
+- workload / stability / growth_rate
+- career_level
+- months_in_company
+- months_in_current_career_level
+- career_xp
+- work_district
+- region_id
+- housing_type
+- build_age / house_condition
+- feature tags
+- contract_status
+- ENERGY / STRESS / HAPPINESS
+- commute_minutes
+- environment scores
+- season / weather
+- cash/assets
+- recent event groups
+- persistent state
+
+조건 엔진은 코드지만 값과 조합은 어드민 데이터다.
+
+## 34.7 초반 보호기간
+
+현재 V0.1:
+
+- 첫 3~6개월 강한 부정 이벤트 제한
+- 기본 테스트 시작값: 6개월
+
+관리 대상:
+
+```text
+early_game_protection_months
+protected_event_groups
+protected_event_ids
+protected_weight_modifier
+```
+
+## 34.8 부정/긍정 연속 방지
+
+관리 대상:
+
+- 최근 N개월 큰 부정 이벤트 집계기간
+- 큰 부정 후 다음 큰 부정 weight modifier
+- 회복성/중립 이벤트 보정
+- 큰 긍정 이벤트 cooldown
+- 큰 긍정 연속 weight modifier
+
+예시 키:
+
+```text
+negative_streak_window_months
+negative_major_weight_modifier
+positive_streak_window_months
+positive_major_weight_modifier
+```
+
+## 34.9 CHOICE 선택지
+
+관리 필드:
+
+```text
+choice_id
+event_id
+label
+description
+money_delta
+energy_delta
+stress_delta
+happiness_delta
+career_delta
+free_time_delta
+add_state_ids
+remove_state_ids
+followup_rule_ids
+is_active
+```
+
+큰 돈/직장/주거 장기효과는 선택 전에 방향성을 고지한다.
+
+## 34.10 미해결 상태
+
+`미루기`는 이벤트를 종료하지 않고 persistent state를 만들 수 있다.
+
+관리 구조:
+
+```text
+state_id
+name
+monthly_money_delta
+monthly_energy_delta
+monthly_stress_delta
+monthly_happiness_delta
+environment_penalty_profile
+blocked_scene_ids
+followup_profile_id
+is_active
+```
+
+예:
+
+```text
+HOUSE_LEAK_ACTIVE
+BOILER_BROKEN
+JOB_SEARCH_ACTIVE
+RESTRUCTURING_PENDING
+```
+
+상태 제거 조건도 데이터로 연결한다.
+
+## 34.11 후속 이벤트 규칙
+
+지원 타입:
+
+```text
+GUARANTEED
+PROBABILITY
+CONDITION
+```
+
+관리 구조:
+
+```text
+followup_rule_id
+source_event_id
+source_choice_id
+followup_type
+delay_min_months
+delay_max_months
+followup_event_id
+base_probability
+required_state_ids
+condition_profile
+weight
+is_active
+```
+
+후속 이벤트는 RANDOM 월 이벤트 발생률과 별도로 도래 처리한다.
+
+## 34.12 악화 프로필
+
+주거문제를 미뤘을 때 악화확률 등은 데이터로 관리한다.
+
+관리 구조:
+
+```text
+escalation_profile_id
+base_probability
+probability_per_month
+max_probability
+cost_multiplier
+stress_per_month
+environment_penalty
+max_defer_months
+escalated_event_id
+is_active
+```
+
+예시 `30% → 다음 달 60%` 같은 값은 확정값이 아니라 프로필 데이터다.
+
+## 34.13 주거 고장 이벤트
+
+관리 대상:
+
+- 집 상태/연식별 발생 weight
+- 신축/구축 보정
+- 계절 조건
+- 수리비
+- 미루기 가능 여부
+- 미해결 상태 ID
+- followup rule
+- escalation profile
+- 생활환경 패널티
+- 제한되는 생활씬
+
+랜덤 가구 파손/영구손실은 사용하지 않는다.
+
+## 34.14 커리어 이벤트
+
+관리 대상:
+
+- 승진 자격조건과 event_group 연결
+- 이직 제안 조건/weight
+- 구조조정 안정성별 weight
+- 보너스/야근 이벤트 프로필
+- 후속 커리어 체인
+- 회사별 event_profile
+
+커리어 자격 계산의 의미는 `03_career.md`, 이벤트 전달과 반복제한은 `10_events.md`가 기준이다.
+
+## 34.15 이벤트 보상/손실 프로필
+
+초기 참고범위:
+
+- 소형: 월 가처분소득 약 5~20%
+- 중형: 약 20~50%
+- 큰 이벤트: 약 50~100%, 낮은 빈도
+
+관리 대상:
+
+```text
+reward_profile_id
+size_tier
+reference_income_type
+min_ratio
+max_ratio
+fixed_min
+fixed_max
+```
+
+한 번의 랜덤 사건으로 여러 달 장기저축을 크게 훼손하지 않게 한다.
+
+## 34.16 이벤트 만료/우선순위
+
+관리 대상:
+
+- priority
+- expire_enabled
+- expire_after_months
+- PENDING 중요 이벤트의 만료 금지 여부
+- 같은 체인 block
+- 복귀 시 노출순서
+
+권장 우선순위:
+
+```text
+시스템 필수/계약
+→ 예약된 중요 FOLLOWUP
+→ 중요 RANDOM CHOICE
+→ 일반 이벤트
+→ FLAVOR
+```
+
+## 34.17 이벤트 UI/문구
+
+관리 대상:
+
+- title
+- body copy
+- choice copy
+- result copy
+- priority별 UI profile
+- 상태/악화 안내문구
+- 복귀 요약문구
+- 시각연출 asset/profile key
+
+## 34.18 이벤트와 부업
+
+이벤트 해결 자체에 광고를 직접 붙이지 않는다.
+
+이벤트 비용이 부족하면 일반 게임머니 부족상황으로 `08_ads_sidejob.md`의 부업 CTA를 호출한다.
+
+이벤트로 `이번 달 부업 +1회` 같은 추가기회를 주는 경우 해당 횟수도 어드민 데이터로 관리한다.
+
+## 34.19 이벤트 KPI
+
+추적 대상:
+
+- RANDOM 발생률
+- 카테고리별 발생률
+- event_group별 실제 간격
+- 승진/이직 반복간격
+- CHOICE 선택비율
+- PENDING 누적개수
+- 후속 이벤트 정상도래율
+- 미루기 선택률
+- 미해결 상태 평균 유지개월
+- 악화 발생률
+- 부정 이벤트 연속발생률
+- 이벤트 후 이탈률
+- 이벤트 비용 후 부업 전환율
+
+## 34.20 10에서 코드로 유지할 항목
+
+다음은 코드/엔진 영역이다.
+
+- RANDOM 후보 추출
+- condition matching 엔진
+- weight 랜덤선택
+- cooldown/group cooldown 판정 엔진
+- event_relation block/weight 적용 엔진
+- SCHEDULED/FOLLOWUP 예약큐 실행
+- PENDING 큐
+- 동일 체인 잠금
+- persistent state 적용/해제
+- escalation probability 계산
+- 결과 적용/로그 저장
+- 오프라인 이벤트 처리순서
+
+단, 엔진이 참조하는 기간, 확률, 조건, 가중치, 보상, 문구, 연결관계는 어드민에서 관리한다.
