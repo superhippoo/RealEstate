@@ -1,5 +1,5 @@
 # 15_admin.md
-기준일: 2026-08-19
+기준일: 2026-08-21
 상태: V0.1 운영/어드민 관리항목 정리
 
 # 1. 문서 목적
@@ -1579,13 +1579,19 @@ is_active
 - 일반 방의 용도는 가구배치를 기반으로 자동 인식
 - 전월세와 자가의 인테리어 권한 차등
 - 현재 주거단계보다 다음 단계 가구 일부를 미리 보여주는 progression 구조
-- 주담대 월상환 계산 방식 자체
+- 주담대 원리금균등 월상환 계산 방식 자체
 - 전세대출 월이자 계산 방식 자체
+- 신규대출 실행월에는 자동상환하지 않고 다음 게임월부터 첫 상환
+- 현재 거주주택/계약 기준 활성 주거대출 최대 1개
+- 전세대출 원금 일부상환 금지
+- HOME_LOAN 일부상환 시 잔여만기 유지 + 월상환액 재계산
 - `spendable_cash` 계산 엔진
 - 필수지출 예약 처리 엔진
 - 주택가격 기반/상환능력 기반 대출한도 계산 엔진
 - 전세 종료 시 보증금 반환 및 대출원금 정산 엔진
+- 전세→자가 전환 시 순보증금 선반영 후 기존 대출 정산
 - 자가 매도 시 기존 주담대 정산 엔진
+- 자가→자가 갈아타기 시 기존집 순자산 선반영 후 기존 대출 정산
 - 이직 시 기존대출 포함 상환가능성 검사 엔진
 - 순주택자산 계산 엔진
 - 광고가 대출잔액을 직접 감소시키는 구조 금지
@@ -1639,7 +1645,7 @@ is_active
 - 주거단계별 이사비
 - 가구 이동/보관 정책
 - 핵심 이벤트 마스터/발생조건/후속체인
-- 대출상품/신규금리/기간/한도/상환능력/필수지출 예약 설정
+- 대출상품/신규금리/기간/한도/상환능력/필수지출 예약/상환정책 설정
 
 ## P1 — 라이브 운영에 중요
 
@@ -2919,7 +2925,7 @@ fixed_max
 
 출처: `11_loan.md`
 
-`11_loan.md` V0.1 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
+`11_loan.md` V0.2 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
 
 ## 35.1 대출상품 마스터
 
@@ -2943,6 +2949,8 @@ sort_order
 
 MVP에서는 신용대출/가구대출을 사용하지 않는다.
 
+현재 거주주택/계약 기준 활성 주거대출은 최대 1개다. 이 개수 제한 로직은 코드 정책으로 유지한다.
+
 ## 35.2 신규대출 금리
 
 기존대출은 실행 시 금리를 고정하고 시장금리 변화는 신규대출에만 반영한다.
@@ -2959,31 +2967,43 @@ is_active
 
 기존대출 금리 재계산은 하지 않는다.
 
-## 35.3 주담대 기본기간
+## 35.3 주담대 상환방식/기본기간
 
-현재 MVP 우선안:
+현재 MVP 확정:
 
+- `HOME_LOAN` 상환방식: 원리금균등상환
 - `HOME_LOAN` 기본 만기: 30년
+- `default_term_months = 360`
 
 관리 필드 후보:
 
 ```text
 loan_product_id
+repayment_type
 default_term_months
 allowed_term_months
 ```
 
-현재 `default_term_months = 360`을 우선 사용한다.
+현재 권장값:
+
+```text
+HOME_LOAN
+repayment_type = EQUAL_TOTAL_PAYMENT
+default_term_months = 360
+```
 
 기존 60~120개월 게임용 단축안은 사용하지 않는다.
 
 향후 20년/30년/40년 선택을 도입하면 `allowed_term_months`로 관리한다.
 
-## 35.4 전세대출 이자형 정책
+월 원리금 계산 엔진 자체는 코드다.
 
-현재 정책:
+## 35.4 전세대출 이자형/상환 정책
+
+현재 확정 정책:
 
 - 계약 중 월 이자만 납부
+- 계약 중 원금 일부상환 불가
 - 계약 종료 시 반환된 보증금에서 원금 자동정산
 
 관리 필드 후보:
@@ -2992,15 +3012,17 @@ allowed_term_months
 loan_product_id
 repayment_type
 interest_only_during_contract
+partial_repayment_enabled
 principal_settlement_trigger
 ```
 
-권장 값 예:
+현재 권장값:
 
 ```text
 JEONSE_LOAN
 repayment_type = INTEREST_ONLY
 interest_only_during_contract = true
+partial_repayment_enabled = false
 principal_settlement_trigger = JEONSE_CONTRACT_END
 ```
 
@@ -3086,9 +3108,11 @@ priority
 is_active
 ```
 
+HOME_LOAN 일부상환 시 새 월상환액을 계산한 뒤 예약값을 즉시 갱신한다.
+
 예약/합산 처리 엔진 자체는 코드다.
 
-## 35.9 Spendable Cash 표시/임계값
+## 35.9 Spendable Cash / 잔여현금 경고
 
 계산식:
 
@@ -3104,6 +3128,7 @@ spendable_cash
 - UI에 `보유현금`과 `사용 가능 현금`을 함께 표시할지 여부
 - 부족액 CTA 노출 임계값
 - 낮은 사용가능현금 경고 임계값
+- 주택계약 후 낮은 잔여현금 경고 임계값
 - 경고/안내 문구
 
 관리 필드 후보:
@@ -3112,9 +3137,13 @@ spendable_cash
 show_cash_balance
 show_spendable_cash
 low_spendable_cash_threshold
+low_post_contract_cash_threshold
 shortage_cta_threshold
 warning_copy
+post_contract_cash_warning_copy
 ```
+
+주택 구매 후 절대 최소현금 보유액은 강제하지 않는다. 안전조건을 만족하지만 현금이 적게 남는 선택은 허용하고 경고만 노출한다.
 
 ## 35.10 신규대출 재직/소득 조건
 
@@ -3146,7 +3175,7 @@ job_change_safety_buffer
 
 연봉 감소 자체는 금지조건이 아니다.
 
-## 35.12 일부상환 / 전액상환
+## 35.12 HOME_LOAN 일부상환 / 전액상환
 
 관리 필드 후보:
 
@@ -3155,18 +3184,77 @@ loan_product_id
 partial_repayment_enabled
 full_repayment_enabled
 minimum_partial_repayment_amount
+partial_repayment_term_policy
 prepayment_fee_rate
 ```
 
-현재 MVP 정책:
+현재 MVP 확정값:
 
-- `HOME_LOAN` 일부상환 가능
-- `HOME_LOAN` 전액상환 가능
+```text
+HOME_LOAN
+partial_repayment_enabled = true
+full_repayment_enabled = true
+minimum_partial_repayment_amount = 1000000
+partial_repayment_term_policy = KEEP_REMAINING_TERM
+prepayment_fee_rate = 0
+```
+
+정책:
+
+- 최소 일부상환액 기본값: 1,000,000원
+- 일부상환 가능금액 상한: `spendable_cash`
+- 일부상환 후 잔여 만기 유지
+- 일부상환 후 월상환액 재계산
+- 새 월상환액 기준으로 `reserved_mandatory_expenses` 즉시 갱신
 - 중도상환수수료 없음
 
-일부상환에 사용할 수 있는 금액은 필수지출 예약을 침범하지 않도록 `spendable_cash` 범위 안에서 제한한다.
+`JEONSE_LOAN`은 일부상환 대상이 아니다.
 
-## 35.13 집 매도/갈아타기 관련 관리값
+## 35.13 신규대출 첫 상환 시작
+
+현재 MVP 정책:
+
+- 대출 실행 게임월에는 신규대출 자동상환 없음
+- 실행 다음 게임월부터 첫 상환/이자 납부
+- 일할계산 없음
+
+관리 필드 후보:
+
+```text
+loan_product_id
+first_payment_offset_months
+proration_enabled
+first_payment_copy
+```
+
+현재 권장값:
+
+```text
+first_payment_offset_months = 1
+proration_enabled = false
+```
+
+상환월 계산 자체는 코드다.
+
+## 35.14 전세→자가 / 자가→자가 자금계획
+
+전세→자가에서 사용하는 예상 순보증금:
+
+```text
+반환 예정 전세보증금
+- 남은 JEONSE_LOAN 원금
+- 계약 종료 확정비용
+= 예상 순보증금
+```
+
+자가→자가에서 사용하는 예상 순자산:
+
+```text
+예상 매도가
+- 남은 HOME_LOAN 원금
+- 예상 매도비용
+= 예상 순자산
+```
 
 관리 후보:
 
@@ -3174,44 +3262,43 @@ prepayment_fee_rate
 sale_cost_rate
 sale_fixed_cost
 estimated_sale_price_modifier
+jeonse_exit_cost_profile
 ```
 
-정산식 구조:
+예상 자기자본 선반영, 기존대출 정산 후 신규대출 생성 순서는 코드 규칙이다.
 
-```text
-매도가
-- 남은 주담대
-- 매도비용
-= 실제 회수현금
-```
-
-기존 대출 자동종료와 새집 신규대출 생성은 코드 규칙이다.
-
-## 35.14 대출 UI 문구/표시
+## 35.15 대출 UI 문구/표시
 
 관리 대상:
 
 - 대출상품명/설명
 - 금리 표시문구
-- 월상환 표시문구
+- 월상환/월이자 표시문구
 - 계약 후 남는 현금 문구
 - 예상 월 자유소득 문구
+- 첫 상환 시작월 문구
+- 낮은 잔여현금 경고
 - 상환능력 부족 안내
 - 이직 제한 사유 안내
-- 일부상환/전액상환 안내
+- HOME_LOAN 일부상환/전액상환 안내
+- JEONSE_LOAN 일부상환 불가 안내가 필요한 경우 해당 문구
 
-집 구매 화면의 핵심 표시 항목:
+집 구매/대출 화면의 핵심 표시 항목:
 
 - 집값
 - 보유현금
 - 사용 가능 현금
+- 전세 예상 순보증금
 - 기존집 매도 예상 순자산
 - 대출액
 - 계약 후 남는 현금
-- 월상환액
+- 월상환액 또는 월이자
 - 예상 월 자유소득
+- 대출기간
+- 적용금리
+- 첫 상환 시작월
 
-## 35.15 대출 관련 KPI
+## 35.16 대출 관련 KPI
 
 추적 후보:
 
@@ -3219,29 +3306,76 @@ estimated_sale_price_modifier
 - 평균 대출비율
 - 대출 후 예상 자유소득 분포
 - 첫 자가 구매 시 평균 자기자본/대출 비율
-- 일부상환 이용률
-- 전액상환 이용률
+- HOME_LOAN 일부상환 이용률
+- HOME_LOAN 전액상환 이용률
+- 평균 일부상환액
+- 일부상환 후 월상환액 감소폭
 - 갈아타기 시 기존대출 정산규모
+- 전세→자가 전환 시 순보증금 기여비율
 - 이직 affordability 제한 발생률
 - 사용 가능 현금 부족으로 인한 구매 보류율
+- 낮은 계약 후 잔여현금 경고 노출/진행률
 - 부족액 CTA → 부업 전환율
 
-## 35.16 11에서 코드로 유지할 항목
+## 35.17 player_loan / 대출 상태 구조
+
+실제 DB 스키마 자체는 코드/개발영역이지만 운영·로그에서 참조할 최소 의미값은 다음과 같다.
+
+```text
+loan_id
+player_id
+loan_product_id
+linked_house_id
+linked_contract_id
+original_principal
+remaining_principal
+interest_rate
+repayment_type
+term_months
+remaining_term_months
+monthly_payment
+monthly_principal
+monthly_interest
+started_game_month
+first_payment_game_month
+last_payment_game_month
+status
+closed_game_month
+settlement_reason
+```
+
+MVP 상태값:
+
+```text
+ACTIVE
+PAID_OFF
+SETTLED_ON_CONTRACT_END
+SETTLED_ON_SALE
+```
+
+`OVERDUE`, `DEFAULT`, `FORECLOSURE`, `BANKRUPTCY`는 사용하지 않는다.
+
+## 35.18 11에서 코드로 유지할 항목
 
 다음은 코드/엔진 영역이다.
 
-- 주담대 월상환 계산
+- 원리금균등 주담대 월상환 계산
 - 전세대출 월이자 계산
+- 신규대출 첫 상환월 계산
+- 활성 주거대출 최대 1개 상태관리
 - `spendable_cash` 계산
 - 필수지출 예약 처리
 - 주택가격 기반 대출한도 계산
 - 상환능력 기반 대출한도 계산
 - 최종 대출한도 계산
 - 전세종료 시 보증금 반환/원금정산
+- 전세→자가 순보증금 선반영/정산
 - 집 매도 시 기존 주담대 정산
-- 일부/전액상환 처리
+- 자가→자가 예상 순자산 선반영/정산
+- HOME_LOAN 일부/전액상환 처리
+- HOME_LOAN 일부상환 후 잔여만기 유지 + 월상환액 재계산
 - 이직 시 기존대출 포함 상환가능성 검사
 - 순주택자산 계산
 - 대출상태 생성/종료
 
-단, 엔진이 참조하는 금리, 기간, 비율, threshold, 안전선, 활성여부와 UI 문구는 본 섹션의 어드민 데이터로 관리한다.
+단, 엔진이 참조하는 금리, 기간, 비율, threshold, 안전선, 활성여부, 최소 일부상환액과 UI 문구는 본 섹션의 어드민 데이터로 관리한다.
