@@ -136,7 +136,7 @@ CONTRACT_FINAL_NOTICE_MONTHS
 
 # 5. 경제 밸런스 관리
 
-출처: `00_master_policy.md`, `01_economy_balance.md`, `10_events.md`, `11_loan.md`
+출처: `00_master_policy.md`, `01_economy_balance.md`, `10_events.md`, `11_loan.md`, `13_life_stage.md`
 
 ## 5.1 시작 자산
 
@@ -165,7 +165,7 @@ starting_cash
 - 라이프스타일 인플레이션 계수
 - 보험/기타 고정비
 - 주거단계별 소비수준 보정
-- 가족/라이프스테이지 추가비용은 13 상세기획 이후 추가
+- Household State별 생활비 보정은 아래 `# 37. 라이프스테이지 상세 관리` 기준
 
 ## 5.3 자동 지출 항목
 
@@ -921,7 +921,7 @@ special_badge_copy
 
 # 15. 계약/이사 시간 관리
 
-출처: `04_time_contract.md`
+출처: `04_time_contract.md`, `16_multi_property.md`
 
 ## 15.1 임대계약
 
@@ -974,7 +974,9 @@ temporary_stay_restricted_action_ids
 
 ## 15.4 자가 갈아타기
 
-`현재 거주 중인 유일한 자가 → 다음 거주지 확정 후 매도` 정책은 코드 규칙이다.
+MVP/V0.1에서는 `현재 거주 중인 유일한 자가 → 다음 거주지 확정 후 매도` 정책을 코드 규칙으로 사용한다.
+
+향후 `16_multi_property.md` 상세기획 이후에는 `새 집 구매 → 기존 집 보유` 선택을 추가할 수 있으며, 이 경우 현재 거주지와 보유주택을 분리한다.
 
 어드민 관리 후보:
 
@@ -1258,7 +1260,7 @@ is_active
 
 # 20. 생활씬/조합행동 관리
 
-출처: `00_master_policy.md`, `05_furniture.md`, `07_character_life.md`
+출처: `00_master_policy.md`, `05_furniture.md`, `07_character_life.md`, `13_life_stage.md`
 
 ## 20.1 생활씬 마스터
 
@@ -1296,6 +1298,8 @@ is_active
 - 일반 행동 대비 추가 보상
 - 최초발견 보상
 - 생활앨범 기록 여부
+- Household State 조건
+- 참여 캐릭터 역할/인원 조건
 
 정확한 보상수치와 캐릭터 스탯 연결은 아래 #31 캐릭터 생활 관리 기준을 사용한다.
 
@@ -1303,7 +1307,7 @@ is_active
 
 # 21. 평면도 템플릿 관리
 
-출처: `02_real_estate.md`, `06_house_grid.md`
+출처: `02_real_estate.md`, `06_house_grid.md`, `13_life_stage.md`
 
 ## 21.1 Floorplan Template
 
@@ -1325,6 +1329,7 @@ obstacle_cells
 feature_tags
 ownership_type_rule
 rarity
+recommended_household_size
 is_active
 ```
 
@@ -1351,6 +1356,7 @@ is_active
 - 지역
 - 신축/구축
 - rarity
+- Household State 추천적합도
 
 에 따른 템플릿 선택 가중치를 관리할 수 있다.
 
@@ -1358,7 +1364,7 @@ is_active
 
 # 22. Grid/공간 기준값 관리
 
-출처: `06_house_grid.md`
+출처: `06_house_grid.md`, `13_life_stage.md`
 
 ## 22.1 기본 Grid 환산값
 
@@ -1384,9 +1390,12 @@ Grid 알고리즘 자체는 코드지만 이 환산 기준은 시스템 설정�
 - work_environment_score 구간
 - relax_environment_score 구간
 - storage_score 구간
+- household_space 구간
+- privacy 구간
+- family_storage 구간
 - 각 구간 표시문구
 
-정확한 스코어 산식은 07과 함께 확정한다.
+정확한 스코어 산식은 07/13과 함께 관리한다.
 
 ## 22.3 공간 용도 판정 기준
 
@@ -1401,11 +1410,13 @@ optional_tags = PC, BOOKSHELF, DESK_LAMP
 minimum_score = TBD
 ```
 
+FAMILY 상태에서 CHILD_ROOM 성격 역시 실제 배치된 아이 가구/태그를 바탕으로 판정할 수 있다.
+
 ---
 
 # 23. 주택 Feature 관리
 
-출처: `02_real_estate.md`, `06_house_grid.md`, `08_ads_sidejob.md`
+출처: `02_real_estate.md`, `06_house_grid.md`, `08_ads_sidejob.md`, `13_life_stage.md`, `16_multi_property.md`
 
 현재 Feature 후보:
 
@@ -1440,16 +1451,19 @@ price_modifier
 unlockable_furniture_tags
 unlockable_scene_ids
 special_reason_copy
+collection_tag
 is_active
 ```
 
 Feature는 가격만 올리는 값이 아니라 새로운 가구와 생활씬을 여는 연결 데이터로 관리한다.
 
+향후 16 다주택/주거 컬렉션에서는 Feature가 컬렉션 축으로도 사용될 수 있다.
+
 ---
 
 # 24. 전월세/자가 인테리어 권한 관리
 
-출처: `06_house_grid.md`
+출처: `06_house_grid.md`, `13_life_stage.md`
 
 핵심 정책:
 
@@ -1464,6 +1478,7 @@ interior_action_id
 is_allowed
 required_housing_progression_tier
 required_feature_id
+required_household_state
 ```
 
 현재 자가에서 해금하는 시공 후보:
@@ -1486,11 +1501,13 @@ MVP 이후 자가 확장:
 - 방 합치기
 - 구조 변경
 
+FAMILY 전용 자가 콘텐츠는 `required_household_state`로 연결할 수 있다.
+
 ---
 
 # 25. 인테리어 시공 콘텐츠 관리
 
-출처: `00_master_policy.md`, `01_economy_balance.md`, `05_furniture.md`, `06_house_grid.md`
+출처: `00_master_policy.md`, `01_economy_balance.md`, `05_furniture.md`, `06_house_grid.md`, `13_life_stage.md`
 
 시공은 가구 이후의 큰 경제 싱크다.
 
@@ -1514,6 +1531,7 @@ price
 required_ownership_type
 required_feature_id
 required_housing_progression_tier
+required_household_state
 space_type
 visual_result_key
 effect_profile
@@ -1546,7 +1564,7 @@ is_active
 
 # 27. 어드민에서 별도로 관리하지 않을 확정 로직
 
-현재 00~12 기준으로 다음은 코드/기획 규칙으로 유지한다.
+현재 00~13 기준으로 다음은 코드/기획 규칙으로 유지한다. `16_multi_property.md`는 장기 확장 방향만 확정된 상태이며 상세기획 전까지 MVP/V0.1 1주택 규칙을 유지한다.
 
 - 광고 수입은 일반 게임머니와 동일하게 취급
 - 광고로 월급/승진 직접 구매 불가
@@ -1565,13 +1583,13 @@ is_active
 - 랜덤 이벤트로 집/가구/보증금 등 기존 성장의 영구손실 금지
 - 계약 만료 오프라인 발생 시 자동 재계약/강제퇴거 금지
 - TEMPORARY_STAY 만료 후 주거결정 전 시간 정지
-- 현재 거주 중인 유일한 자가는 다음 거주지 없이 단독 매도 불가
+- MVP/V0.1에서 현재 거주 중인 유일한 자가는 다음 거주지 없이 단독 매도 불가
 - 매매/전세/월세 주택유형 계수는 동일 값을 공유하지 않음
 - 실거래 시장유형과 게임 레이아웃유형 분리
 - 개별 가구가 월급/승진확률을 직접 올리는 RPG식 효과 금지
 - 중고 가구 판매 없음
 - 보관함은 게임적으로 무제한
-- 이동가구는 영구 소유하고 이사 시 자동 회수
+- 이동가구는 영구 소유하고 MVP 이사 시 자동 회수
 - 이사 중 가구 분실/파손 없음
 - 새 집은 완전 빈집으로 시작하고 자동배치하지 않음
 - 이전 집 최종 스냅샷은 이사 직전 자동 저장
@@ -1582,7 +1600,7 @@ is_active
 - 주담대 원리금균등 월상환 계산 방식 자체
 - 전세대출 월이자 계산 방식 자체
 - 신규대출 실행월에는 자동상환하지 않고 다음 게임월부터 첫 상환
-- 현재 거주주택/계약 기준 활성 주거대출 최대 1개
+- MVP/V0.1 현재 거주주택/계약 기준 활성 주거대출 최대 1개
 - 전세대출 원금 일부상환 금지
 - HOME_LOAN 일부상환 시 잔여만기 유지 + 월상환액 재계산
 - `spendable_cash` 계산 엔진
@@ -1591,7 +1609,7 @@ is_active
 - 전세 종료 시 보증금 반환 및 대출원금 정산 엔진
 - 전세→자가 전환 시 순보증금 선반영 후 기존 대출 정산
 - 자가 매도 시 기존 주담대 정산 엔진
-- 자가→자가 갈아타기 시 기존집 순자산 선반영 후 기존 대출 정산
+- MVP/V0.1 자가→자가 갈아타기 시 기존집 순자산 선반영 후 기존 대출 정산
 - 이직 시 기존대출 포함 상환가능성 검사 엔진
 - 순주택자산 계산 엔진
 - 광고가 대출잔액을 직접 감소시키는 구조 금지
@@ -1609,6 +1627,19 @@ is_active
 - 자가 현재시세는 게임월마다 갱신
 - 신규 Starting Market Snapshot으로 기존 플레이어 시세를 덮어쓰지 않음
 - 장기 부동산 가격 Hard Cap 없음
+- 라이프스테이지는 생물학적 나이가 아니라 Household State로 처리
+- V0.1 Household State는 SOLO / PARTNER / FAMILY_WITH_CHILD
+- SOLO도 완전한 장기 플레이 허용
+- PARTNER/FAMILY를 필수 progression으로 만들지 않음
+- Household State 중요 전환은 CHOICE이며 오프라인 자동확정 금지
+- 자가 여부와 Household State는 독립
+- 작은 집에서도 모든 Household State 거주 가능
+- recommended household size 초과는 soft pressure이며 강제퇴거 아님
+- 자녀 실제 연령 progression 없음(V0.1)
+- 교육환경은 FAMILY Utility이며 주택가격에 중복 가산하지 않음
+- 랜덤 이별/사망/가족 영구손실 없음
+- 게임시간 경과만으로 Household State 자동소멸 금지
+- 다주택 확장 후에도 Household 실제 생활효과는 current residence 1개 기준으로 처리하는 방향
 
 단, 위 정책의 `수치/대상/조건 범위`가 바뀔 필요가 있을 경우 상세기획과 코드 버전업으로 변경한다. 12의 고정 시장 Cycle 기간/변동률은 일반 라이브 어드민 조작값으로 두지 않는다.
 
@@ -1618,16 +1649,20 @@ is_active
 
 아래 문서는 아직 상세기획 전이므로 어드민 관리항목은 상세 확정과 동시에 본 문서에 추가한다.
 
-- `13_life_stage.md`
-  - 파트너/자녀/가족상태
-  - 발생조건
-  - 생활비/주거조건 변화
-
 - `14_healing_social.md`
   - 계절/날씨
   - 생활앨범
   - 공유카드
   - 추천/인기집 운영
+
+- `16_multi_property.md`
+  - 다주택 해금조건
+  - 현재 거주지/추가 보유주택 분리
+  - 기존집 보유 선택
+  - 집별 가구배치/인테리어 상태
+  - 주거 컬렉션
+  - 추가주택 구매조건
+  - 추가주택 대출/임대수익 여부
 
 ---
 
@@ -1665,14 +1700,16 @@ is_active
 - 밸런스 계수
 - 신규 회사/지역/가구/평면도 활성화
 - 재계약 가격 상하한 및 Starting Market Snapshot 분기 운영
+- Household State 프로필/제안조건/생활비/콘텐츠 해금
 
 ## P2 — 고도화 이후
 
 - 고급 추천운영
 - 소셜/공유 운영
-- 라이프스테이지 운영
+- 라이프스테이지 고도화
 - 구조변경/프리미엄 인테리어
-- 다주택/투자주택 콘텐츠
+- 다주택/주거 컬렉션 콘텐츠
+- 다주택 임대수익/복수대출 등 투자 확장
 
 ---
 
@@ -1957,6 +1994,8 @@ name
 required_furniture_tags
 required_space_usage
 required_house_features
+required_household_state
+required_actor_roles
 season
 weather
 time_band
@@ -1981,6 +2020,7 @@ is_active
 - 첫 발견은 가장 큰 보상 + 생활앨범 등록 가능
 - 반복 발생은 보상을 낮추거나 쿨다운 적용
 - 직접 큰 현금보상을 지급하지 않음
+- PARTNER/FAMILY는 복수 캐릭터 역할 조건으로 생활씬을 확장할 수 있음
 
 ## 31.11 주거단계별 생활씬 해금
 
@@ -2003,6 +2043,8 @@ priority
 - 쓰리룸·아파트: 취미방/드레스룸/홈짐/큰 거실
 - 자가: 욕조/본격 욕실·주방 시공 기반 생활씬
 - 프리미엄: 테라스/홈바/홈카페/대형 취미공간
+
+Household State별 추가 생활씬은 #37의 콘텐츠 해금과 함께 관리한다.
 
 ## 31.12 번아웃 관리
 
@@ -2028,6 +2070,8 @@ priority
 - 신규 공간 첫 반응
 - 생활씬 문구
 - 번아웃/회복 반응
+- PARTNER/FAMILY 전환 반응
+- 가족 공간부족/만족 반응
 
 관리 필드 후보:
 
@@ -2054,6 +2098,8 @@ is_active
 
 오프라인에서는 특수 생활씬의 실제 발견을 자동 처리하지 않는다.
 
+Household State 중요 전환도 오프라인에서 자동확정하지 않는다.
+
 ## 31.15 07에서 코드로 유지할 항목
 
 다음은 어드민 데이터가 아니라 코드/엔진 영역이다.
@@ -2067,8 +2113,9 @@ is_active
 - 생활리듬 상태전환 엔진
 - 오프라인 생활 계산 처리순서
 - 저장/로드 구조
+- 복수 캐릭터 interaction point 중복점유 방지
 
-단, 알고리즘이 사용하는 조건값/가중치/기간/보상값은 본 섹션의 어드민 데이터로 관리한다.
+단, 알고리즘이 사용하는 조건값/가중치/기간/보상값은 본 섹션과 #37의 어드민 데이터로 관리한다.
 
 ---
 
@@ -2111,6 +2158,8 @@ is_active
 - 게임월 시작 시 확정 여부
 
 현재 일반 테스트 기준은 약 5회/게임월이다.
+
+Household State 자체로 부업 기본횟수를 직접 추가하지 않는다.
 
 ## 32.3 상시 부업 메뉴
 
@@ -2283,9 +2332,11 @@ is_active
 
 # 33. 이사/보관함 상세 관리
 
-출처: `09_moving_inventory.md`, `11_loan.md`
+출처: `09_moving_inventory.md`, `11_loan.md`, `16_multi_property.md`
 
-`09_moving_inventory.md` 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
+`09_moving_inventory.md` 상세기획 확정내용을 MVP/V0.1 기준으로 사용한다.
+
+`16_multi_property.md` 상세기획 이후에는 집별 배치상태 동시보존과 집 간 가구 이동정책이 확장될 수 있다.
 
 ## 33.1 주거단계별 이사비
 
@@ -2325,13 +2376,15 @@ discard_enabled
 discard_protection_type
 ```
 
-정책:
+MVP/V0.1 정책:
 
 - 이동 가능 가구는 영구 소유
 - 보관함은 게임적으로 무제한
 - 이사 시 모든 `PLACED` 이동가구 자동 회수
 - 새 집에 배치 불가능해도 보관함에 유지
 - 중고판매 없음
+
+향후 다주택에서는 보유주택마다 별도 `PLACED` 상태를 보존할 수 있도록 확장한다.
 
 ## 33.3 삭제 보호정책
 
@@ -2394,6 +2447,7 @@ is_active
 - 새 주거단계에서 해금된 가구
 - 새 집 Feature
 - 현재 비어 있는 생활기능
+- 현재 Household State의 공간욕구
 
 관리 필드 후보:
 
@@ -2401,6 +2455,7 @@ is_active
 move_recommendation_rule_id
 trigger_type
 condition_tags
+required_household_state
 recommended_category_or_item
 recommended_interior_action_id
 priority
@@ -2421,6 +2476,7 @@ is_active
 - 빈 방 안내문구
 - 새 해금 가구 안내문구
 - 새 Feature 안내문구
+- Household State별 공간안내문구
 
 관리 구조 후보:
 
@@ -2435,7 +2491,7 @@ is_active
 
 ## 33.7 이전 집 스냅샷
 
-확정 정책:
+MVP/V0.1 확정 정책:
 
 - 이사 직전 마지막 배치/시공 상태를 자동 저장
 - 거주 중 중간 배치는 별도 자동보관하지 않음
@@ -2447,8 +2503,11 @@ is_active
 - 앨범 표시명 템플릿
 - 대표 이미지 생성용 프레임/문구
 - 표시 정보 항목
+- Household State/가족기록 표시 여부
 
 스냅샷 생성과 저장 엔진 자체는 코드다.
+
+다주택 확장에서는 매도된 과거집 스냅샷과 현재 보유주택의 실시간 배치상태를 구분한다.
 
 ## 33.8 집 귀속 시공 가치정책
 
@@ -2466,6 +2525,8 @@ is_active
 
 매매가격 반영 여부는 어드민 토글로 두지 않고 현재 기획 정책으로 고정한다.
 
+향후 기존 자가를 보유하는 경우 시공상태는 해당 보유주택에 계속 남는다.
+
 ## 33.9 이사 관련 KPI
 
 추적 대상:
@@ -2480,10 +2541,11 @@ is_active
 - 이사 직후 추천 → 상점 진입률
 - 새 Feature 추천 → 관련 가구/시공 구매율
 - 이전 집 스냅샷 열람률
+- Household State 변화 후 이사율
 
 ## 33.10 09에서 코드로 유지할 항목
 
-다음은 코드/엔진 영역이다.
+MVP/V0.1 코드/엔진 영역:
 
 - `PLACED → MOVING → STORED` 상태변환
 - 이사 시 이동가구 자동 회수
@@ -2496,11 +2558,13 @@ is_active
 
 단, 가구별 이동 가능 여부, 삭제 보호, 이사비, 추천조건, 문구 등은 어드민에서 관리한다.
 
+16 상세기획 시 `현재집 이사 = 전부 회수` 규칙을 추가 보유주택에도 동일 적용할지 여부는 재검토한다.
+
 ---
 
 # 34. 이벤트 상세 관리
 
-출처: `10_events.md`
+출처: `10_events.md`, `13_life_stage.md`
 
 `10_events.md` 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
 
@@ -2590,6 +2654,8 @@ HOUSE_BREAKDOWN_MINOR
 HOUSE_BREAKDOWN_MAJOR
 HEALTH_MINOR
 REGION_CHANGE
+PARTNER_PROPOSAL
+FAMILY_PROPOSAL
 ```
 
 신규 그룹은 어드민에서 추가/활성화 가능하다.
@@ -2630,6 +2696,7 @@ is_active
 - 승진 직후 또 승진 방지
 - 이직 직후 또 이직 방지
 - 이직 직후 큰 구조조정 같은 불합리한 조합 완화
+- 라이프스테이지 제안 재노출 cooldown 연결
 - 이벤트 종류가 늘어나도 코드수정 없이 관계 추가
 
 ## 34.6 발생조건 프로필
@@ -2648,6 +2715,8 @@ is_active
 - build_age / house_condition
 - feature tags
 - contract_status
+- household_state
+- months_in_household_state
 - ENERGY / STRESS / HAPPINESS
 - commute_minutes
 - environment scores
@@ -2711,10 +2780,11 @@ free_time_delta
 add_state_ids
 remove_state_ids
 followup_rule_ids
+household_state_change
 is_active
 ```
 
-큰 돈/직장/주거 장기효과는 선택 전에 방향성을 고지한다.
+큰 돈/직장/주거/Household 장기효과는 선택 전에 방향성을 고지한다.
 
 ## 34.10 미해결 상태
 
@@ -2869,6 +2939,8 @@ fixed_max
 → FLAVOR
 ```
 
+PARTNER/FAMILY 전환 CHOICE는 오프라인 자동확정하지 않고 PENDING으로 유지한다.
+
 ## 34.17 이벤트 UI/문구
 
 관리 대상:
@@ -2881,6 +2953,7 @@ fixed_max
 - 상태/악화 안내문구
 - 복귀 요약문구
 - 시각연출 asset/profile key
+- PARTNER/FAMILY 제안/거절/재제안 문구
 
 ## 34.18 이벤트와 부업
 
@@ -2907,6 +2980,7 @@ fixed_max
 - 부정 이벤트 연속발생률
 - 이벤트 후 이탈률
 - 이벤트 비용 후 부업 전환율
+- PARTNER/FAMILY 제안 노출률/수락률/거절률/재제안 수락률
 
 ## 34.20 10에서 코드로 유지할 항목
 
@@ -2924,6 +2998,7 @@ fixed_max
 - escalation probability 계산
 - 결과 적용/로그 저장
 - 오프라인 이벤트 처리순서
+- Household 중요 CHOICE의 자동확정 방지
 
 단, 엔진이 참조하는 기간, 확률, 조건, 가중치, 보상, 문구, 연결관계는 어드민에서 관리한다.
 
@@ -2931,9 +3006,9 @@ fixed_max
 
 # 35. 대출 상세 관리
 
-출처: `11_loan.md`
+출처: `11_loan.md`, `13_life_stage.md`, `16_multi_property.md`
 
-`11_loan.md` V0.2 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
+`11_loan.md` V0.2 상세기획 확정내용을 MVP/V0.1 기준으로 사용한다.
 
 ## 35.1 대출상품 마스터
 
@@ -2957,7 +3032,9 @@ sort_order
 
 MVP에서는 신용대출/가구대출을 사용하지 않는다.
 
-현재 거주주택/계약 기준 활성 주거대출은 최대 1개다. 이 개수 제한 로직은 코드 정책으로 유지한다.
+MVP/V0.1 현재 거주주택/계약 기준 활성 주거대출은 최대 1개다. 이 제한은 `16_multi_property.md` 상세기획 전까지 유지한다.
+
+첫 다주택 확장에서는 추가 보유주택 현금구매 우선안을 검토하므로 복수 HOME_LOAN은 당장 어드민 대상으로 추가하지 않는다.
 
 ## 35.2 신규대출 금리
 
@@ -3065,6 +3142,7 @@ minimum_free_income
 minimum_free_income_ratio
 safety_buffer_amount
 safety_buffer_ratio
+recognized_household_contribution_ratio
 is_active
 ```
 
@@ -3076,6 +3154,8 @@ maximum_loan
 ```
 
 `affordability_limit` 및 최종 한도 계산 엔진은 코드로 유지한다.
+
+PARTNER household contribution은 플레이어 salary와 분리하며 전액 인정하지 않는 방향으로 테스트한다.
 
 ## 35.7 Minimum Free Income / Safety Buffer
 
@@ -3101,6 +3181,7 @@ safety_buffer_ratio
 - 다음 월세
 - 관리비
 - 기본 생활비
+- Household State별 추가 생활비
 - 보험/기타 고정비
 - 전세대출 월이자
 - 주담대 월상환액
@@ -3116,7 +3197,7 @@ priority
 is_active
 ```
 
-HOME_LOAN 일부상환 시 새 월상환액을 계산한 뒤 예약값을 즉시 갱신한다.
+HOME_LOAN 일부상환 또는 Household State 변경 시 새 월예산을 계산한 뒤 예약값을 즉시 갱신한다.
 
 예약/합산 처리 엔진 자체는 코드다.
 
@@ -3255,7 +3336,7 @@ proration_enabled = false
 = 예상 순보증금
 ```
 
-자가→자가에서 사용하는 예상 순자산:
+MVP/V0.1 자가→자가에서 사용하는 예상 순자산:
 
 ```text
 예상 매도가
@@ -3273,7 +3354,9 @@ estimated_sale_price_modifier
 jeonse_exit_cost_profile
 ```
 
-예상 자기자본 선반영, 기존대출 정산 후 신규대출 생성 순서는 코드 규칙이다.
+예상 자기자본 선반영, 기존대출 정산 후 신규대출 생성 순서는 MVP 코드 규칙이다.
+
+16 다주택 상세기획에서 기존집을 보유하는 경우에는 이 순자산을 신규집 자금으로 선반영할 수 없으므로 별도 자금계획을 정의한다.
 
 ## 35.15 대출 UI 문구/표시
 
@@ -3290,6 +3373,7 @@ jeonse_exit_cost_profile
 - 이직 제한 사유 안내
 - HOME_LOAN 일부상환/전액상환 안내
 - JEONSE_LOAN 일부상환 불가 안내가 필요한 경우 해당 문구
+- Household contribution 인정금액/비율 안내
 
 집 구매/대출 화면의 핵심 표시 항목:
 
@@ -3298,6 +3382,8 @@ jeonse_exit_cost_profile
 - 사용 가능 현금
 - 전세 예상 순보증금
 - 기존집 매도 예상 순자산
+- 플레이어 소득
+- 인정되는 Household contribution
 - 대출액
 - 계약 후 남는 현금
 - 월상환액 또는 월이자
@@ -3324,6 +3410,7 @@ jeonse_exit_cost_profile
 - 사용 가능 현금 부족으로 인한 구매 보류율
 - 낮은 계약 후 잔여현금 경고 노출/진행률
 - 부족액 CTA → 부업 전환율
+- Household State별 대출 실행률/평균 인정기여액
 
 ## 35.17 player_loan / 대출 상태 구조
 
@@ -3365,12 +3452,12 @@ SETTLED_ON_SALE
 
 ## 35.18 11에서 코드로 유지할 항목
 
-다음은 코드/엔진 영역이다.
+MVP/V0.1 코드/엔진 영역:
 
 - 원리금균등 주담대 월상환 계산
 - 전세대출 월이자 계산
 - 신규대출 첫 상환월 계산
-- 활성 주거대출 최대 1개 상태관리
+- 현재 거주주택/계약 활성 주거대출 최대 1개 상태관리
 - `spendable_cash` 계산
 - 필수지출 예약 처리
 - 주택가격 기반 대출한도 계산
@@ -3388,11 +3475,13 @@ SETTLED_ON_SALE
 
 단, 엔진이 참조하는 금리, 기간, 비율, threshold, 안전선, 활성여부, 최소 일부상환액과 UI 문구는 본 섹션의 어드민 데이터로 관리한다.
 
+복수 HOME_LOAN/투자주택 대출은 `16_multi_property.md` 상세기획 이후 별도로 정의한다.
+
 ---
 
 # 36. 부동산 시세 상세 관리
 
-출처: `12_market_price.md`
+출처: `12_market_price.md`, `16_multi_property.md`
 
 `12_market_price.md` V0.1 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
 
@@ -3549,6 +3638,7 @@ renewal_decrease_cap
 - 구입가 대비 변화 안내
 - 계약갱신 시 현재시세 안내
 - 장기 시세기록/공유카드 문구
+- 향후 보유주택별 구입가/현재가/보유기간 문구
 
 시장국면 판정 자체는 코드고정 Cycle을 따른다.
 
@@ -3567,6 +3657,7 @@ renewal_decrease_cap
 - 계약갱신 가격변화 분포
 - 장기 게임연차별 최대/중앙 주택가격
 - 50년/100년/300년 이상 장기 플레이 가격표시 오류
+- 향후 보유주택별 시세갱신 정상여부
 
 ## 36.10 12에서 코드로 유지할 항목
 
@@ -3597,3 +3688,358 @@ renewal_decrease_cap
 - 서버 전체 플레이어 대상 현실시간 시세 배치갱신 없음
 
 현재 Cycle 구간 길이와 월변동률은 V0.1 통합 시뮬레이션 결과 필요시 상세기획/코드 버전업으로 수정한다. 일반 운영 어드민에서 즉석 변경하는 값으로 두지 않는다.
+
+향후 다주택에서는 동일 플레이어의 모든 보유주택 current_market_value가 같은 개인 시장지수를 기준으로 평가되도록 16에서 상세화한다.
+
+---
+
+# 37. 라이프스테이지 상세 관리
+
+출처: `13_life_stage.md`
+
+`13_life_stage.md` V0.1 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
+
+핵심 운영원칙:
+
+> 라이프스테이지는 생물학적 나이가 아니라 Household State이며, PARTNER/FAMILY는 필수 progression이 아니다.
+
+## 37.1 Household State Profile
+
+V0.1 상태:
+
+```text
+SOLO
+PARTNER
+FAMILY_WITH_CHILD
+```
+
+관리 필드 후보:
+
+```text
+household_state
+name
+living_cost_modifier
+partner_contribution
+recognized_loan_income_ratio
+recommended_household_size
+is_active
+sort_order
+```
+
+SOLO도 완전한 장기플레이 상태이므로 비활성화/불리한 기본상태로 취급하지 않는다.
+
+## 37.2 Household State별 생활비
+
+관리 대상:
+
+- SOLO 생활비 modifier
+- PARTNER 생활비 modifier
+- FAMILY_WITH_CHILD 생활비 modifier
+- 가구원 증가 시 추가 생활비 항목
+- 자연어 월예산 안내문구
+
+단순 인원수 선형배수 대신 공유비용을 고려한 완만한 증가를 사용한다.
+
+Household State 변화가 확정되면 `reserved_mandatory_expenses`를 즉시 재산정한다.
+
+## 37.3 파트너 Household Contribution
+
+관리 후보:
+
+```text
+household_state
+partner_contribution
+contribution_formula_type
+minimum_contribution
+maximum_contribution
+```
+
+파트너 contribution은 플레이어 salary와 별도 항목으로 표시한다.
+
+플레이어 급여를 직접 증가시키는 방식으로 구현하지 않는다.
+
+## 37.4 대출 인정 contribution
+
+관리 후보:
+
+```text
+recognized_household_contribution_ratio
+```
+
+목적:
+
+- PARTNER 선택만으로 대출한도 급증 방지
+- PARTNER를 부동산 progression의 필수선택으로 만들지 않음
+
+정확한 초기값은 01/11/13 통합 시뮬레이션에서 확정한다.
+
+## 37.5 PARTNER 제안 이벤트
+
+관리 대상:
+
+```text
+partner_proposal_profile_id
+minimum_social_months
+required_household_state
+condition_profile
+proposal_event_id
+reproposal_cooldown_months
+reproposal_enabled
+copy_profile_id
+is_active
+```
+
+다음과 같은 hard condition은 기본적으로 사용하지 않는다.
+
+- 자가 보유 필수
+- 특정 연봉 이상 필수
+- 특정 주거티어 이상 필수
+
+## 37.6 FAMILY 제안 이벤트
+
+관리 대상:
+
+```text
+family_proposal_profile_id
+required_household_state
+minimum_partner_months
+condition_profile
+proposal_event_id
+reproposal_cooldown_months
+reproposal_enabled
+copy_profile_id
+is_active
+```
+
+기본 required_household_state:
+
+```text
+PARTNER
+```
+
+거절은 실패가 아니며 cooldown 이후 재제안 가능하다.
+
+## 37.7 제안 비활성/재제안 정책
+
+관리 후보:
+
+- 재제안 cooldown
+- 재제안 enabled
+- 사용자 요청 시 제안 다시 받지 않기 옵션 노출여부
+- 재활성화 UX 문구
+
+실제 Household State 전환은 중요 CHOICE로만 처리하고 오프라인 자동확정하지 않는다.
+
+## 37.8 Household Housing Preference
+
+관리 구조 후보:
+
+```text
+household_state
+space_weight
+storage_weight
+privacy_weight
+education_weight
+bathroom_weight
+living_environment_weight
+recommended_room_count
+recommended_household_size
+copy_profile_id
+```
+
+PARTNER 후보 선호:
+
+- 독립 침실
+- 2인 생활공간
+- 식사공간
+- 수납
+
+FAMILY 후보 선호:
+
+- 방 개수
+- 수납
+- 욕실
+- 아이 공간
+- 교육환경
+- 공원/생활환경
+
+추천가중치일 뿐 입주 제한으로 사용하지 않는다.
+
+## 37.9 Recommended Household Size
+
+주택/평면별 관리 후보:
+
+```text
+floorplan_template_id
+recommended_household_size_min
+recommended_household_size_max
+```
+
+또는 housing progression tier별 기본값을 둘 수 있다.
+
+추천 인원 초과 시:
+
+- 공간부족
+- 수납부족
+- 프라이버시 부족
+- 제한되는 생활씬
+
+등의 soft pressure에만 사용한다.
+
+강제퇴거/계약불가에는 사용하지 않는다.
+
+## 37.10 교육환경 Utility
+
+FAMILY_WITH_CHILD에서만 교육환경 가중치를 활성화한다.
+
+관리 후보:
+
+```text
+region_id
+education_environment_score
+education_label
+```
+
+`education_environment_score`는 FAMILY 주택추천/Utility에 사용한다.
+
+주택가격에 다시 곱하지 않는다.
+
+특정 지역이 무조건 정답이 되지 않도록 가격/통근/공간/생활환경과 함께 QA한다.
+
+## 37.11 Household Content Unlock
+
+관리 구조 후보:
+
+```text
+household_state
+content_type
+content_id
+purchase_enabled
+preview_enabled
+priority
+is_active
+```
+
+content_type 후보:
+
+```text
+FURNITURE
+LIFE_SCENE
+INTERIOR
+SHOP_SECTION
+REACTION
+```
+
+PARTNER 후보 콘텐츠:
+
+- 2인 침대
+- 큰 식탁
+- 큰 소파
+- 추가 수납
+- 2인 생활씬
+
+FAMILY 후보 콘텐츠:
+
+- 아이 침대/책상/수납
+- 장난감
+- 패밀리 식탁/소파
+- 아이공간 생활씬
+- FAMILY 자가 인테리어
+
+## 37.12 복수 캐릭터 생활씬
+
+관리 후보:
+
+```text
+life_scene_id
+required_household_state
+required_actor_roles
+required_actor_count
+required_interaction_points
+```
+
+actor role 후보:
+
+```text
+PLAYER
+PARTNER
+CHILD
+```
+
+복수 캐릭터 interaction point 점유판정 자체는 코드다.
+
+## 37.13 Household 자연어 상태/안내
+
+관리 문구 후보:
+
+- 둘이 살기엔 조금 좁아요.
+- 아이 공간이 부족해요.
+- 수납이 넉넉해요.
+- 교육환경이 좋아요.
+- 가족이 함께 쓰기 좋은 거실이에요.
+
+관리 구조 후보:
+
+```text
+household_copy_id
+household_state
+trigger_type
+score_range
+copy
+priority
+is_active
+```
+
+## 37.14 가족 생활앨범/기록 연결
+
+14 상세기획에서 사용할 수 있도록 관리 콘텐츠 후보:
+
+- 처음 함께 산 집
+- 처음 둘이 꾸민 거실
+- 아이 공간을 만든 집
+- 첫 가족 식탁
+- 가족의 첫 자가
+- 오래 살았던 가족집
+
+표시문구/배지/카드 카피는 14 확정 후 본 문서에 추가한다.
+
+## 37.15 라이프스테이지 KPI
+
+추적 후보:
+
+- PARTNER 제안 도달시간
+- PARTNER 제안 수락/거절률
+- FAMILY 제안 도달시간
+- FAMILY 제안 수락/거절률
+- 재제안 수락률
+- Household State별 평균 주거유형
+- Household State 변경 후 평균 이사까지 시간
+- Household State별 생활비/가처분소득 분포
+- Household State별 첫 자가 도달시간
+- Household State별 대출 실행률/인정 contribution
+- PARTNER/FAMILY 전용 가구 구매율
+- PARTNER/FAMILY 전용 생활씬 발생률
+- FAMILY 교육환경이 주택선택에 미치는 영향
+- SOLO 장기유지 플레이 비율
+
+## 37.16 13에서 코드로 유지할 항목
+
+다음은 코드/기획 영역이다.
+
+- 라이프스테이지 = 생물학적 나이가 아닌 Household State 구조
+- V0.1 SOLO / PARTNER / FAMILY_WITH_CHILD 상태구조
+- SOLO 완전 장기플레이 허용
+- PARTNER/FAMILY 비필수 progression
+- 중요 Household State 전환 CHOICE 처리
+- 오프라인 자동 Household 전환 금지
+- 자가/전세/월세와 Household State 독립
+- 작은 집에서도 모든 Household State 거주 가능
+- recommended household size 초과를 soft pressure로 처리
+- 자녀 실제 연령 progression 없음(V0.1)
+- 학군/교육환경을 주택가격에 중복 가산하지 않음
+- 랜덤 이별/사망/가족 영구손실 없음
+- Household State 자체가 영구 행복 버프를 주지 않음
+- 게임시간 경과만으로 Household State 자동소멸 금지
+- 향후 다주택에서도 Household 실제 생활은 current residence 1곳 기준
+
+단, 생활비 modifier, contribution, 대출 인정률, 제안조건/cooldown, 주택추천 가중치, 교육환경 score, 콘텐츠 해금, 문구는 어드민에서 관리한다.
