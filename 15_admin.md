@@ -1260,7 +1260,7 @@ is_active
 
 # 20. 생활씬/조합행동 관리
 
-출처: `00_master_policy.md`, `05_furniture.md`, `07_character_life.md`, `13_life_stage.md`
+출처: `00_master_policy.md`, `05_furniture.md`, `07_character_life.md`, `13_life_stage.md`, `14_healing_social.md`
 
 ## 20.1 생활씬 마스터
 
@@ -1301,7 +1301,7 @@ is_active
 - Household State 조건
 - 참여 캐릭터 역할/인원 조건
 
-정확한 보상수치와 캐릭터 스탯 연결은 아래 #31 캐릭터 생활 관리 기준을 사용한다.
+정확한 보상수치와 캐릭터 스탯 연결은 아래 #31 캐릭터 생활 관리 기준을 사용하고, 발견/앨범/공유는 #38을 따른다.
 
 ---
 
@@ -1416,7 +1416,7 @@ FAMILY 상태에서 CHILD_ROOM 성격 역시 실제 배치된 아이 가구/태�
 
 # 23. 주택 Feature 관리
 
-출처: `02_real_estate.md`, `06_house_grid.md`, `08_ads_sidejob.md`, `13_life_stage.md`, `16_multi_property.md`
+출처: `02_real_estate.md`, `06_house_grid.md`, `08_ads_sidejob.md`, `13_life_stage.md`, `14_healing_social.md`, `16_multi_property.md`
 
 현재 Feature 후보:
 
@@ -1457,7 +1457,7 @@ is_active
 
 Feature는 가격만 올리는 값이 아니라 새로운 가구와 생활씬을 여는 연결 데이터로 관리한다.
 
-향후 16 다주택/주거 컬렉션에서는 Feature가 컬렉션 축으로도 사용될 수 있다.
+14에서는 미발견 생활씬 힌트와 연결할 수 있고, 향후 16 다주택/주거 컬렉션에서는 Feature가 컬렉션 축으로도 사용될 수 있다.
 
 ---
 
@@ -1564,7 +1564,7 @@ is_active
 
 # 27. 어드민에서 별도로 관리하지 않을 확정 로직
 
-현재 00~13 기준으로 다음은 코드/기획 규칙으로 유지한다. `16_multi_property.md`는 장기 확장 방향만 확정된 상태이며 상세기획 전까지 MVP/V0.1 1주택 규칙을 유지한다.
+현재 00~14 기준으로 다음은 코드/기획 규칙으로 유지한다. `16_multi_property.md`는 장기 확장 방향만 확정된 상태이며 상세기획 전까지 MVP/V0.1 1주택 규칙을 유지한다.
 
 - 광고 수입은 일반 게임머니와 동일하게 취급
 - 광고로 월급/승진 직접 구매 불가
@@ -1639,6 +1639,13 @@ is_active
 - 교육환경은 FAMILY Utility이며 주택가격에 중복 가산하지 않음
 - 랜덤 이별/사망/가족 영구손실 없음
 - 게임시간 경과만으로 Household State 자동소멸 금지
+- 현실 계절/날씨/시간대와 게임 내부 계절/날씨/시간대를 강제연동하지 않음
+- 생활씬 발생엔진은 07, 발견/앨범/공유는 14가 담당
+- 반복 DAILY 행동을 전부 생활앨범에 저장하지 않음
+- PARTNER/FAMILY 미선택을 전체 앨범 미완성으로 취급하지 않음
+- 자산순위 중심 랭킹 없음
+- Reaction/인기집 노출이 월급·행복·집값에 직접 보너스를 주지 않음
+- 외부 OS 스크린샷 자체를 통제하지 않음
 - 다주택 확장 후에도 Household 실제 생활효과는 current residence 1개 기준으로 처리하는 방향
 
 단, 위 정책의 `수치/대상/조건 범위`가 바뀔 필요가 있을 경우 상세기획과 코드 버전업으로 변경한다. 12의 고정 시장 Cycle 기간/변동률은 일반 라이브 어드민 조작값으로 두지 않는다.
@@ -1648,12 +1655,6 @@ is_active
 # 28. 향후 상세기획 추가 예정 영역
 
 아래 문서는 아직 상세기획 전이므로 어드민 관리항목은 상세 확정과 동시에 본 문서에 추가한다.
-
-- `14_healing_social.md`
-  - 계절/날씨
-  - 생활앨범
-  - 공유카드
-  - 추천/인기집 운영
 
 - `16_multi_property.md`
   - 다주택 해금조건
@@ -1688,6 +1689,10 @@ is_active
 - 가구 이동/보관 정책
 - 핵심 이벤트 마스터/발생조건/후속체인
 - 대출상품/신규금리/기간/한도/상환능력/필수지출 예약/상환정책 설정
+- 계절/날씨 프로필
+- 생활앨범 scene 설정
+- 수동 Photo 저장한도
+- 외부 공유카드 템플릿
 
 ## P1 — 라이브 운영에 중요
 
@@ -1696,6 +1701,7 @@ is_active
 - 추천룰
 - 이사 직후 새집 추천룰
 - 생활씬 조합
+- 생활앨범 힌트/발견보상/카테고리 운영
 - 이벤트 신규 콘텐츠/밸런스
 - 밸런스 계수
 - 신규 회사/지역/가구/평면도 활성화
@@ -1705,7 +1711,8 @@ is_active
 ## P2 — 고도화 이후
 
 - 고급 추천운영
-- 소셜/공유 운영
+- 게임 내 집구경/Reaction/인기집 큐레이션
+- 소셜 moderation
 - 라이프스테이지 고도화
 - 구조변경/프리미엄 인테리어
 - 다주택/주거 컬렉션 콘텐츠
@@ -1737,9 +1744,9 @@ is_active
 
 # 31. 캐릭터 생활 관리
 
-출처: `07_character_life.md`
+출처: `07_character_life.md`, `14_healing_social.md`
 
-`07_character_life.md` 상세기획이 확정되었으므로 본 섹션을 캐릭터 생활 어드민 관리 기준으로 사용한다.
+`07_character_life.md` 상세기획과 `14_healing_social.md` V0.1 상세기획을 함께 기준으로 사용한다.
 
 ## 31.1 생활 스탯 기본 설정
 
@@ -1884,7 +1891,7 @@ unused_space_weight_bonus
 
 ## 31.6 계절 관리
 
-현재 기본 계절:
+기본 계절:
 
 ```text
 SPRING
@@ -1893,43 +1900,58 @@ AUTUMN
 WINTER
 ```
 
+V0.1 시작값:
+
+```text
+season_duration_game_months = 3
+```
+
+따라서 게임 12개월에 사계절 1회를 경험하고 이후 반복한다.
+
 관리 필드 후보:
 
 ```text
 season_id
 name
 sort_order
+duration_game_months
 visual_profile_key
 behavior_weight_profile
 scene_pool_id
 is_active
 ```
 
-계절 진행주기는 추후 `14_healing_social.md`에서 확정하며 본 문서에 추가한다.
+현실 계절과 자동연동하지 않는다.
 
 ## 31.7 날씨 관리
 
-현재 후보:
+V0.1:
 
-- 맑음
-- 흐림
-- 비
-- 눈
+```text
+CLEAR
+CLOUDY
+RAIN
+SNOW
+```
 
 관리 필드 후보:
 
 ```text
 weather_id
 name
+season_id
 weight
-allowed_seasons
+allowed
 visual_profile_key
+sound_profile_key
 behavior_weight_profile
 scene_pool_id
 is_active
 ```
 
-실제 현실 날씨가 아니라 게임 내부 날씨를 사용한다.
+날씨는 계절별 weight로 결정하고 기본적으로 생활주기 동안 유지한다.
+
+실제 현실 날씨와 연동하지 않는다.
 
 ## 31.8 시간대 관리
 
@@ -2021,6 +2043,8 @@ is_active
 - 반복 발생은 보상을 낮추거나 쿨다운 적용
 - 직접 큰 현금보상을 지급하지 않음
 - PARTNER/FAMILY는 복수 캐릭터 역할 조건으로 생활씬을 확장할 수 있음
+
+앨범 등록/미발견 힌트/공유카드 연결은 #38에서 관리한다.
 
 ## 31.11 주거단계별 생활씬 해금
 
@@ -2115,7 +2139,7 @@ Household State 중요 전환도 오프라인에서 자동확정하지 않는다
 - 저장/로드 구조
 - 복수 캐릭터 interaction point 중복점유 방지
 
-단, 알고리즘이 사용하는 조건값/가중치/기간/보상값은 본 섹션과 #37의 어드민 데이터로 관리한다.
+단, 알고리즘이 사용하는 조건값/가중치/기간/보상값은 본 섹션과 #37/#38의 어드민 데이터로 관리한다.
 
 ---
 
@@ -2332,7 +2356,7 @@ is_active
 
 # 33. 이사/보관함 상세 관리
 
-출처: `09_moving_inventory.md`, `11_loan.md`, `16_multi_property.md`
+출처: `09_moving_inventory.md`, `11_loan.md`, `14_healing_social.md`, `16_multi_property.md`
 
 `09_moving_inventory.md` 상세기획 확정내용을 MVP/V0.1 기준으로 사용한다.
 
@@ -2497,6 +2521,8 @@ MVP/V0.1 확정 정책:
 - 거주 중 중간 배치는 별도 자동보관하지 않음
 - 이전 집 스냅샷은 기본적으로 계속 보관
 
+14에서는 이 스냅샷을 `주거 역사`, Before/After 공유카드에 사용한다.
+
 어드민 관리 후보:
 
 - 자동 스냅샷 활성 여부는 정책상 기본 ON
@@ -2542,6 +2568,7 @@ MVP/V0.1 확정 정책:
 - 새 Feature 추천 → 관련 가구/시공 구매율
 - 이전 집 스냅샷 열람률
 - Household State 변화 후 이사율
+- 주거역사/Before-After 공유카드 생성률
 
 ## 33.10 09에서 코드로 유지할 항목
 
@@ -3695,7 +3722,7 @@ renewal_decrease_cap
 
 # 37. 라이프스테이지 상세 관리
 
-출처: `13_life_stage.md`
+출처: `13_life_stage.md`, `14_healing_social.md`
 
 `13_life_stage.md` V0.1 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
 
@@ -3992,7 +4019,9 @@ is_active
 
 ## 37.14 가족 생활앨범/기록 연결
 
-14 상세기획에서 사용할 수 있도록 관리 콘텐츠 후보:
+`14_healing_social.md` 확정 기준으로 Household milestone을 생활앨범/주거역사/공유카드에 연결한다.
+
+후보:
 
 - 처음 함께 산 집
 - 처음 둘이 꾸민 거실
@@ -4001,7 +4030,18 @@ is_active
 - 가족의 첫 자가
 - 오래 살았던 가족집
 
-표시문구/배지/카드 카피는 14 확정 후 본 문서에 추가한다.
+관리 후보:
+
+```text
+household_state
+milestone_type
+album_category_id
+share_card_template_id
+copy_profile_id
+is_active
+```
+
+PARTNER/FAMILY를 선택하지 않은 플레이어에게 해당 카테고리를 전체 미완성으로 계산하지 않는다.
 
 ## 37.15 라이프스테이지 KPI
 
@@ -4043,3 +4083,450 @@ is_active
 - 향후 다주택에서도 Household 실제 생활은 current residence 1곳 기준
 
 단, 생활비 modifier, contribution, 대출 인정률, 제안조건/cooldown, 주택추천 가중치, 교육환경 score, 콘텐츠 해금, 문구는 어드민에서 관리한다.
+
+---
+
+# 38. 힐링 / 생활앨범 / 공유 / 소셜 상세 관리
+
+출처: `14_healing_social.md`, `07_character_life.md`, `09_moving_inventory.md`, `12_market_price.md`, `13_life_stage.md`, `16_multi_property.md`
+
+`14_healing_social.md` V0.1 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
+
+핵심 운영원칙:
+
+> 생활씬의 발생 로직은 07이 담당하고, 14는 최초발견·생활앨범·주거역사·Photo Mode·공유를 담당한다.
+
+> 게임 내 소셜보다 개인 기록과 외부 공유를 MVP에서 우선한다.
+
+## 38.1 Season Profile
+
+V0.1 계절:
+
+```text
+SPRING
+SUMMER
+AUTUMN
+WINTER
+```
+
+초기값:
+
+```text
+season_duration_game_months = 3
+```
+
+관리 필드 후보:
+
+```text
+season_id
+name
+sort_order
+duration_game_months
+visual_profile_key
+sound_profile_key
+scene_pool_id
+is_active
+```
+
+현실 계절과 자동연동하지 않는다.
+
+## 38.2 Weather Profile
+
+V0.1 날씨:
+
+```text
+CLEAR
+CLOUDY
+RAIN
+SNOW
+```
+
+계절별 관리:
+
+```text
+season_id
+weather_id
+weight
+allowed
+visual_profile_key
+sound_profile_key
+is_active
+```
+
+예:
+
+- SPRING: CLEAR/CLOUDY/RAIN
+- SUMMER: CLEAR/CLOUDY/RAIN
+- AUTUMN: CLEAR/CLOUDY/RAIN
+- WINTER: CLEAR/CLOUDY/SNOW + 낮은 RAIN
+
+실제 현실 날씨를 사용하지 않는다.
+
+## 38.3 날씨 유지주기
+
+기본적으로 `07_character_life.md`의 생활주기 하나 동안 하나의 날씨를 유지한다.
+
+관리 후보:
+
+```text
+weather_change_unit = LIFE_CYCLE
+```
+
+생활주기 길이가 조정되면 날씨 체감속도도 함께 QA한다.
+
+## 38.4 시간대 연출 프로필
+
+관리 후보:
+
+```text
+time_band
+name
+visual_profile_key
+sound_profile_key
+scene_weight_profile
+is_active
+```
+
+V0.1:
+
+```text
+MORNING
+DAY
+EVENING
+NIGHT
+```
+
+현실 현지시각과 강제연동하지 않는다.
+
+## 38.5 생활씬 앨범 설정
+
+관리 필드 후보:
+
+```text
+life_scene_id
+album_enabled
+album_category_id
+album_title
+album_description
+first_discovery_reward_profile
+silhouette_enabled
+hint_enabled
+hint_copy
+representative_frame_profile
+is_active
+```
+
+반복 DAILY 행동은 기본적으로 album_enabled=false다.
+
+## 38.6 생활앨범 카테고리
+
+기본 탭:
+
+```text
+CURRENT_HOME
+LIFE_SCENES
+HOUSING_HISTORY
+```
+
+생활장면 내부 카테고리 후보:
+
+- 계절
+- 주거단계
+- Feature
+- SOLO
+- PARTNER
+- FAMILY
+
+관리 필드 후보:
+
+```text
+album_category_id
+name
+category_type
+sort_order
+completion_display_enabled
+is_active
+```
+
+Household 선택형 콘텐츠는 전체 단일 완성률에 강제로 포함하지 않는다.
+
+## 38.7 미발견 실루엣 / 힌트
+
+관리 대상:
+
+- 미발견 슬롯 노출여부
+- 힌트 노출여부
+- 힌트 문구
+- 힌트 해금조건
+
+힌트는 정답공략보다 새 집/가구/Feature 욕망을 만드는 정도로 제공한다.
+
+예:
+
+```text
+욕조가 있는 집에서 겨울밤을 보내보세요.
+```
+
+## 38.8 주거역사 표시
+
+`09_moving_inventory.md`의 이사 직전 스냅샷을 사용한다.
+
+표시 후보:
+
+```text
+region
+housing_type
+size_pyeong
+contract_type
+move_in_game_month
+move_out_game_month
+career_state
+household_state
+purchase_price
+sale_price
+representative_scene
+```
+
+관리 대상:
+
+- 표시항목 활성여부
+- 카드 템플릿
+- 앨범 제목 문구
+- Before/After 조합 템플릿
+
+## 38.9 Photo Mode 저장 제한
+
+Photo Mode 진입/카메라 조정에는 횟수제한을 두지 않는다.
+
+게임 내부 수동사진 저장에만 제한을 둔다.
+
+V0.1 테스트값:
+
+```text
+manual_photo_save_limit_per_game_month = 3
+manual_photo_save_limit_per_house = 20
+```
+
+관리 필드 후보:
+
+```text
+manual_photo_save_limit_per_game_month
+manual_photo_save_limit_per_house
+manual_photo_delete_enabled
+manual_photo_limit_copy
+```
+
+정책:
+
+- 게임월당 기본 3장 수동저장
+- 집별 기본 20장 동시보관
+- 기존 수동사진 삭제 후 새 저장 가능
+- AUTO_LIFE_SCENE / AUTO_MOVE_HISTORY는 수동한도 미차감
+- 외부 OS 스크린샷 통제하지 않음
+
+## 38.10 Share Card Template
+
+V0.1 카드유형:
+
+```text
+HOME_CARD
+MOVE_CARD
+MILESTONE_CARD
+LIFE_SCENE_CARD
+HISTORY_CARD
+```
+
+향후:
+
+```text
+MARKET_HISTORY_CARD
+PROPERTY_COLLECTION_CARD
+```
+
+관리 필드 후보:
+
+```text
+share_card_template_id
+card_type
+name
+layout_profile_key
+visible_field_ids
+copy_profile_id
+background_profile_key
+is_active
+```
+
+## 38.11 Before / After
+
+핵심 공유카드 후보:
+
+- 첫 입주 vs 현재 집
+- 첫 원룸 vs 현재 집
+- 이사 직후 vs 현재 꾸민 상태
+
+관리 후보:
+
+```text
+before_after_template_id
+before_source_type
+after_source_type
+visible_field_ids
+copy_profile_id
+is_active
+```
+
+## 38.12 장기 시세/보유기록 공유
+
+`12_market_price.md`의 값을 사용한다.
+
+표시 후보:
+
+- 구입가
+- 현재시세
+- 매도가
+- 보유기간
+- 게임 시작 대비 시장변화
+
+자산숫자를 카드의 유일한 주인공으로 만들지 않고 집 이미지/주거기록을 우선한다.
+
+## 38.13 향후 Featured House Theme
+
+게임 내 집구경 확장 시 관리 후보:
+
+```text
+featured_theme_id
+name
+description
+condition_profile
+available_from
+available_until
+sort_order
+is_active
+```
+
+테마 예:
+
+- 작은 집 잘 꾸미기
+- 구축 리모델링
+- 포근한 거실
+- 테라스
+- 겨울집
+- 원룸 인테리어
+
+## 38.14 향후 추천 다양성
+
+추천에서 직접 사용하지 않는 신호:
+
+- 집값
+- 순자산
+- career_level
+- 보유주택 수
+
+관리 가능한 다양성 보정:
+
+```text
+same_player_repeat_penalty
+same_house_repeat_penalty
+premium_house_repeat_penalty
+region_diversity_weight
+housing_tier_diversity_weight
+small_house_slot_ratio
+freshness_weight
+```
+
+추천알고리즘 자체는 코드다.
+
+## 38.15 Reaction
+
+향후 후보:
+
+```text
+COZY
+WANT_TO_LIVE
+INSPIRED
+```
+
+사용자 문구 예:
+
+- 포근해요
+- 살아보고 싶어요
+- 아이디어 얻었어요
+
+관리 필드 후보:
+
+```text
+reaction_id
+name
+icon_asset_key
+sort_order
+is_active
+```
+
+Reaction이 돈/행복/집값을 직접 올리지 않는다.
+
+## 38.16 UGC / Moderation
+
+게임 내 공개 UGC를 도입할 경우 어드민 대상:
+
+- 공개가능 필드
+- 집 제목 preset
+- 금칙어/신고사유
+- 노출중단 상태
+- 운영 Featured 지정
+
+초기에는 자유텍스트를 최소화한다.
+
+신고/차단/모더레이션 처리 엔진은 실제 소셜 상세 구현 때 별도 정의한다.
+
+## 38.17 소셜 BM 제한
+
+어드민 상품으로도 다음을 만들지 않는다.
+
+- 유료 Reaction 부스트
+- 광고시청으로 인기집 상단노출
+- 유료 랭킹 상단
+- 유료 집 방문권
+
+소셜에서의 자연스러운 소비연결은 타인의 가구 → 상점에서 보기 정도를 우선한다.
+
+## 38.18 KPI
+
+추적 후보:
+
+- 계절별 플레이시간
+- 날씨별 생활씬 발생률
+- 특별 생활씬 최초발견률
+- 앨범 진입률
+- 미발견 힌트 열람률
+- 힌트 열람 후 관련 가구/매물 탐색률
+- 주거역사 열람률
+- Photo Mode 진입률
+- 게임월당 수동사진 저장수
+- 집별 수동사진 보관수
+- Photo 한도도달률
+- 수동사진 삭제 후 재저장률
+- 공유카드 생성률
+- 카드유형별 공유율
+- Before/After 공유율
+- 장기 시세카드 공유율
+- 향후 집구경 방문완료율
+- Reaction 분포
+- Featured House 테마별 CTR
+- 작은집/고가집 노출비율
+
+## 38.19 14에서 코드/기획으로 유지할 항목
+
+- 현실 계절/날씨/현지시간과 게임 연출 강제연동 금지
+- 계절은 플레이어 게임시간 기준
+- 사계절 기본 순서
+- 생활씬 발생엔진은 07 담당
+- 14는 발견/기록/공유 담당
+- 반복 DAILY 행동 전체 앨범화 금지
+- PARTNER/FAMILY 미선택을 전체 앨범 미완성으로 취급하지 않음
+- 이사 직전 자동 스냅샷은 09 기준
+- 자산순위 중심 랭킹 없음
+- Reaction/Featured가 경제·생활스탯·집값에 직접 보너스 제공 금지
+- 외부 OS 스크린샷 통제 금지
+- MVP에서 개인기록/외부공유를 게임 내 SNS보다 우선
+
+단, 계절 duration, 날씨 weight, 앨범 설정, 힌트, Photo 저장한도, 공유카드 템플릿, 향후 큐레이션/Reaction 콘텐츠값은 어드민에서 관리한다.
