@@ -1,5 +1,5 @@
 # 15_admin.md
-기준일: 2026-08-21
+기준일: 2026-08-24
 상태: V0.1 운영/어드민 관리항목 정리
 
 # 1. 문서 목적
@@ -1546,7 +1546,7 @@ is_active
 
 # 27. 어드민에서 별도로 관리하지 않을 확정 로직
 
-현재 00~11 기준으로 다음은 코드/기획 규칙으로 유지한다.
+현재 00~12 기준으로 다음은 코드/기획 규칙으로 유지한다.
 
 - 광고 수입은 일반 게임머니와 동일하게 취급
 - 광고로 월급/승진 직접 구매 불가
@@ -1597,20 +1597,26 @@ is_active
 - 광고가 대출잔액을 직접 감소시키는 구조 금지
 - 일반 플레이에서 연체/압류/강제경매/파산 상태를 생성하지 않도록 사전방지
 - 실직 시 기존대출 즉시회수/강제매도 금지
+- 시장은 플레이어 게임월 기준으로만 갱신
+- STABLE / RISING / FALLING 시장 Cycle 순서와 반복은 코드/기획 규칙
+- 시장 Cycle 종료 시 누적시세 초기화 금지
+- 시장 Cycle 전체 누적변화는 양수이며 장기적으로 완만한 우상향
+- 시장 랜덤/Seed/유저별 Regime 추첨 없음
+- 지역별 독립 시장/영구 성장률 차등 없음(V0.1)
+- REGION 이벤트의 시세 직접효과 없음(V0.1)
+- 생성된 매물의 제시가격은 소멸까지 LOCK
+- 기존 임대계약 가격은 계약기간 동안 고정
+- 자가 현재시세는 게임월마다 갱신
+- 신규 Starting Market Snapshot으로 기존 플레이어 시세를 덮어쓰지 않음
+- 장기 부동산 가격 Hard Cap 없음
 
-단, 위 정책의 `수치/대상/조건 범위`가 바뀔 필요가 있을 경우 해당 부분은 어드민 설정으로 분리할 수 있다.
+단, 위 정책의 `수치/대상/조건 범위`가 바뀔 필요가 있을 경우 상세기획과 코드 버전업으로 변경한다. 12의 고정 시장 Cycle 기간/변동률은 일반 라이브 어드민 조작값으로 두지 않는다.
 
 ---
 
 # 28. 향후 상세기획 추가 예정 영역
 
 아래 문서는 아직 상세기획 전이므로 어드민 관리항목은 상세 확정과 동시에 본 문서에 추가한다.
-
-- `12_market_price.md`
-  - 시장추세
-  - 월간 변동폭
-  - 지역 이벤트
-  - 집값 보정계수
 
 - `13_life_stage.md`
   - 파트너/자녀/가족상태
@@ -1637,6 +1643,7 @@ is_active
 - 커리어 최소기간/cooldown/이벤트 관계
 - 통근시간 테이블
 - 지역/부동산 가격지수
+- 신규게임 Starting Market Snapshot/지역×계약유형×시장유형 기준단가
 - 주택유형/매물 생성값
 - 가구 카탈로그/가격/해금
 - 평면도 템플릿
@@ -1657,6 +1664,7 @@ is_active
 - 이벤트 신규 콘텐츠/밸런스
 - 밸런스 계수
 - 신규 회사/지역/가구/평면도 활성화
+- 재계약 가격 상하한 및 Starting Market Snapshot 분기 운영
 
 ## P2 — 고도화 이후
 
@@ -3379,3 +3387,213 @@ SETTLED_ON_SALE
 - 대출상태 생성/종료
 
 단, 엔진이 참조하는 금리, 기간, 비율, threshold, 안전선, 활성여부, 최소 일부상환액과 UI 문구는 본 섹션의 어드민 데이터로 관리한다.
+
+---
+
+# 36. 부동산 시세 상세 관리
+
+출처: `12_market_price.md`
+
+`12_market_price.md` V0.1 상세기획 확정내용을 본 섹션의 기준으로 사용한다.
+
+핵심 운영원칙:
+
+> 어드민은 시장의 상승/보합/하락 흐름을 조작하지 않고, 현실시간 기준으로 새 게임을 시작하는 플레이어의 `Starting Market Snapshot`만 관리한다.
+
+## 36.1 Starting Market Snapshot 마스터
+
+관리 필드 후보:
+
+```text
+snapshot_id
+name
+effective_from
+effective_until
+status
+data_reference_period
+operator_note
+created_at
+published_at
+```
+
+상태 후보:
+
+```text
+DRAFT
+PUBLISHED
+RETIRED
+```
+
+기본 운영주기는 분기 1회 검토/발행을 추천한다.
+
+시장변동이 작으면 기존 Snapshot의 적용기간을 연장할 수 있다.
+
+## 36.2 Snapshot Price
+
+신규게임 시작가격은 개별 매물마다 직접 입력하지 않고 다음 조합별 게임용 기준단가로 관리한다.
+
+```text
+snapshot_id
+region_id
+contract_type
+market_type
+base_unit_price
+```
+
+계약유형:
+
+```text
+RENT
+JEONSE
+SALE
+```
+
+시장유형:
+
+```text
+MULTIFAMILY
+OFFICETEL
+APARTMENT
+```
+
+원룸/투룸/옥탑 등은 `02_real_estate.md`의 market_type / layout_type 분리정책을 따른다.
+
+## 36.3 Snapshot 적용 정책
+
+신규 플레이어가 게임을 시작하면 현실시점에 활성화된 Snapshot을:
+
+```text
+start_market_snapshot_id
+```
+
+로 저장한다.
+
+새 Snapshot이 Publish되어도 기존 플레이어의 시작가격 기준이나 현재시세를 변경하지 않는다.
+
+기존 플레이어는 자신의 게임시간 시장 Cycle을 계속 따른다.
+
+이 적용정책은 코드 규칙이다.
+
+## 36.4 Snapshot 생성 근거
+
+실거래/현실시장 자료는 Snapshot 작성의 참고근거다.
+
+관리/기록 후보:
+
+- data_reference_period
+- 데이터 출처 메모
+- 이전 Snapshot 대비 지역/유형별 변화율
+- 현실 변화율
+- 게임 적용 변화율
+- 운영자 조정사유
+
+실거래 API를 게임가격에 자동 실시간 연동하지 않는다.
+
+현실가격 변화가 크더라도 신규유저 progression을 위해 게임용 변화폭을 압축할 수 있다.
+
+## 36.5 Snapshot Publish 검증
+
+Publish 전 운영검증 후보:
+
+- 적용기간 중복 여부
+- 적용기간 공백 여부
+- 필수 region 누락 여부
+- RENT / JEONSE / SALE 누락 여부
+- MULTIFAMILY / OFFICETEL / APARTMENT 필수조합 누락 여부
+- base_unit_price 0/음수 여부
+- 이전 Snapshot 대비 변화율 경고
+- 첫 직장별 첫 매물 4~6개 생성 가능 여부
+- 시작자금에서 첫 월세 선택 가능 여부
+- 첫 전세/첫 자가 progression 예상시간 변화
+
+변화율 경고 threshold는 운영 편의상 둘 수 있으나 실제 Publish 허용여부는 운영자 판단으로 남길 수 있다.
+
+## 36.6 Snapshot 운영 편의
+
+권장 기능:
+
+- 이전 Snapshot 복사해서 새 Draft 생성
+- 지역/계약/시장유형 Matrix 편집
+- 이전 Snapshot 가격/변화율 함께 표시
+- 일괄 % 보정 후 개별 수정
+- Preview에서 대표 매물가격 확인
+- Publish 예약
+- Retire
+
+실제 게임가격은 Published Snapshot만 참조한다.
+
+## 36.7 재계약 가격 상하한
+
+임대계약 갱신 시 현재 게임시세를 참조한다.
+
+운영 밸런스값 후보:
+
+```text
+contract_type
+renewal_increase_cap
+renewal_decrease_cap
+```
+
+정확한 초기값은 통합 경제 시뮬레이션으로 확정한다.
+
+기존 계약가격을 계약기간 중 매월 변경하는 기능은 두지 않는다.
+
+## 36.8 시장 UI/문구
+
+운영 가능한 문구 후보:
+
+- STABLE 표시문구
+- RISING 표시문구
+- FALLING 표시문구
+- 자가 현재시세 안내
+- 구입가 대비 변화 안내
+- 계약갱신 시 현재시세 안내
+- 장기 시세기록/공유카드 문구
+
+시장국면 판정 자체는 코드고정 Cycle을 따른다.
+
+## 36.9 시세 KPI / QA 운영지표
+
+추적 후보:
+
+- Snapshot별 신규유저 수
+- Snapshot별 첫 집 선택 분포
+- Snapshot별 첫 전세 도달시간
+- Snapshot별 첫 자가 도달시간
+- 신규 Snapshot 전후 progression 변화
+- 게임연차별 평균 SALE/JEONSE/RENT index
+- 자가 구입가 대비 현재시세 분포
+- 순주택자산 분포
+- 계약갱신 가격변화 분포
+- 장기 게임연차별 최대/중앙 주택가격
+- 50년/100년/300년 이상 장기 플레이 가격표시 오류
+
+## 36.10 12에서 코드로 유지할 항목
+
+다음은 일반 라이브 어드민에서 변경하지 않는 코드/기획 규칙이다.
+
+- 현실시간과 플레이어 게임시간의 시장축 분리
+- 현실시간은 신규게임 Snapshot 선택에만 사용
+- 시장 갱신은 플레이어 게임월 경계에서만 수행
+- V0.1 `STABLE → RISING → STABLE → FALLING → STABLE → RISING` Cycle
+- V0.1 36개월 Cycle 구조
+- Cycle 반복
+- Cycle 종료 시 누적 market index 초기화 금지
+- 각 Cycle 최종 누적변화 양수
+- 장기 완만한 우상향
+- 장기 집값 Hard Cap 없음
+- 랜덤 Noise 없음
+- market Seed 없음
+- 유저별 Regime 추첨 없음
+- 지역별 독립 시장/고정 성장률 차등 없음
+- REGION 이벤트 시세 직접효과 없음(V0.1)
+- SALE / JEONSE / RENT 계약유형별 별도 시장지수 사용
+- 생성된 매물가격 LOCK
+- 기존 임대계약 가격 고정
+- 보유 자가 current_market_value 월별 갱신
+- 구입가와 현재시세 분리보존
+- 신규 Snapshot으로 기존 플레이어 시세 덮어쓰기 금지
+- 오프라인 시장 진행 시 월별 순차계산
+- 서버 전체 플레이어 대상 현실시간 시세 배치갱신 없음
+
+현재 Cycle 구간 길이와 월변동률은 V0.1 통합 시뮬레이션 결과 필요시 상세기획/코드 버전업으로 수정한다. 일반 운영 어드민에서 즉석 변경하는 값으로 두지 않는다.
