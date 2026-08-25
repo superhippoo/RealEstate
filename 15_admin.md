@@ -94,7 +94,7 @@ TEMPORARY_STAY_JEONSE_FEE
 
 # 5. 경제 밸런스
 
-출처: `01_economy_balance.md`, `11_loan.md`, `13_life_stage.md`, `16_multi_property.md`
+출처: `01_economy_balance.md`, `03_career.md`, `11_loan.md`, `13_life_stage.md`, `16_multi_property.md`
 
 ## 5.1 시작자산
 
@@ -133,6 +133,36 @@ spendable_cash
 - 계약 후 낮은 현금 경고
 
 가구/인테리어/추가주택/수동상환/수리비 등 수동지출은 `spendable_cash`를 사용한다.
+
+## 5.4 장기 명목경제
+
+수백 게임년 동안 주택가격이 계속 우상향하므로 커리어 급여를 Lv5 값에 영구고정하지 않는다.
+
+관리 후보:
+
+```text
+long_term_nominal_income_enabled
+long_term_nominal_income_start_month
+long_term_nominal_income_update_interval_months
+long_term_nominal_income_growth_rate
+```
+
+적용 원칙:
+
+```text
+actual_salary
+= company_level_base_salary
+× long_term_nominal_income_index
+```
+
+- career_level은 1~5 유지
+- 명목소득 조정은 승진이 아님
+- 직급/업무강도를 자동 변경하지 않음
+- 같은 시점의 이직 offer salary에도 동일 index 적용
+- 정확한 시작시점/주기/상승률은 50/100/300/500년 통합 시뮬레이션 후 확정
+- Market Cycle과 동일 비율로 강제하지 않음
+
+향후 필요하면 생활비/신규 콘텐츠 가격의 장기 명목보정도 별도 index로 확장할 수 있으나 현재 가장 우선하는 것은 income index다.
 
 ---
 
@@ -217,6 +247,8 @@ is_active
 - RESTRUCTURING_MAJOR→동일 12개월 block
 
 기간/가중치는 어드민.
+
+Lv5 이후 급여의 장기 명목성장은 `#5.4`의 index를 사용하며 career level 자체를 무한확장하지 않는다.
 
 ---
 
@@ -806,6 +838,7 @@ is_active
 - Property 이벤트는 글로벌 중요 CHOICE cap과 분리
 - Property Issue는 linked_property_id 단위
 - 오프라인에서도 모든 Property를 월별 순차처리
+- 수백 게임년 플레이에서 career level은 1~5로 유지하되 명목소득을 영구고정하지 않음
 
 ---
 
@@ -853,6 +886,7 @@ HOLDING_COST
 - Snapshot 분기운영/재계약 cap
 - Household 프로필/콘텐츠
 - 신규 회사/지역/가구/floorplan
+- 장기 명목소득 index 운영값(기능 활성 시)
 
 ## P2 — 고도화
 
@@ -1092,7 +1126,7 @@ event_id
 name
 category
 event_type
-aoccurrence_type
+occurrence_type
 event_scope
 event_group
 priority
@@ -1815,6 +1849,7 @@ issue_count_badge_profile
 
 ```text
 경제 ↔ 대출 ↔ 다주택
+장기 명목경제 ↔ Market Hard Cap 없음 ↔ career salary index
 이사 ↔ Grid ↔ 가구 위치
 시장 ↔ 모든 보유주택 평가
 이벤트 ↔ Property Maintenance
