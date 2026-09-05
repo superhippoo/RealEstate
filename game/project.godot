@@ -1,0 +1,23 @@
+; Engine configuration file.
+; 방 한 칸에서 한남동까지 — Micro MVP
+
+config_version=5
+
+[application]
+
+config/name="OneRoomToHannam"
+config/description="서울 주거 성장 시뮬레이션 — Micro MVP"
+run/main_scene="res://scenes/main/main.tscn"
+config/features=PackedStringArray("4.7")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"

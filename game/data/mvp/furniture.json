@@ -1,0 +1,55 @@
+{
+	"version": 1,
+	"furniture": [
+		{
+			"id": "bed_single",
+			"name": "싱글 침대",
+			"price": 800000,
+			"grid_w": 4,
+			"grid_h": 8,
+			"action": "SLEEP",
+			"interaction_locals": [[-1, 2], [-1, 5]],
+			"interaction_label": "자기"
+		},
+		{
+			"id": "sofa_two",
+			"name": "2인 소파",
+			"price": 1200000,
+			"grid_w": 6,
+			"grid_h": 3,
+			"action": "REST",
+			"interaction_locals": [[2, 3], [3, 3]],
+			"interaction_label": "앉기"
+		},
+		{
+			"id": "desk_small",
+			"name": "책상",
+			"price": 400000,
+			"grid_w": 5,
+			"grid_h": 2,
+			"action": "STUDY",
+			"interaction_locals": [[2, 2]],
+			"interaction_label": "책상에 앉기"
+		},
+		{
+			"id": "chair_basic",
+			"name": "의자",
+			"price": 150000,
+			"grid_w": 2,
+			"grid_h": 2,
+			"action": "SIT",
+			"interaction_locals": [[0, 2], [1, 2]],
+			"interaction_label": "앉기"
+		},
+		{
+			"id": "tv_43",
+			"name": "43인치 TV",
+			"price": 2900000,
+			"grid_w": 4,
+			"grid_h": 2,
+			"action": "WATCH_TV",
+			"interaction_locals": [[0, 4], [1, 4], [2, 4], [3, 4]],
+			"interaction_label": "TV 보기"
+		}
+	]
+}
