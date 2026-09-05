@@ -2,8 +2,8 @@ extends Node2D
 ## Micro MVP 메인 — 방 1개 + 가구 배치 + 자율 캐릭터 + 미니 경제.
 ## UI는 코드 생성(MVP 한정), 본 게임은 씬/테마 분리 예정.
 
-const ROOM_W := 13
-const ROOM_H := 10
+const ROOM_W := 16
+const ROOM_H := 12
 
 var grid: GridModel
 var db: FurnitureDB
@@ -66,9 +66,6 @@ func _rebuild_astar() -> void:
 func _build_world() -> void:
 	room_root = Node2D.new()
 	add_child(room_root)
-	# 방 중심을 화면 중앙으로
-	var center := IsoProjector.gridf_to_screen(ROOM_W / 2.0, ROOM_H / 2.0)
-	room_root.position = Vector2(640, 420) - center + Vector2(0, 40)
 
 	room_renderer = load("res://scripts/ui/room_renderer.gd").new()
 	room_renderer.grid = grid
@@ -83,6 +80,21 @@ func _build_world() -> void:
 	agent.set_script(agent_script)
 	room_root.add_child(agent)
 	agent.setup(self)
+
+	# 카메라: 방 전체가 화면에 맞도록 자동 줌
+	var cam := Camera2D.new()
+	add_child(cam)
+	var c000 := IsoProjector.gridf_to_screen(0, 0)
+	var c_w0 := IsoProjector.gridf_to_screen(ROOM_W, 0)
+	var c0h := IsoProjector.gridf_to_screen(0, ROOM_H)
+	var cwh := IsoProjector.gridf_to_screen(ROOM_W, ROOM_H)
+	var min_p := Vector2(minf(c000.x, c0h.x), c000.y - 400.0) - Vector2(40, 40)
+	var max_p := Vector2(maxf(c_w0.x, cwh.x), maxf(c_w0.y, cwh.y)) + Vector2(40, 40)
+	var size := max_p - min_p
+	var zoom: float = minf(1280.0 / size.x, 720.0 / size.y)
+	cam.zoom = Vector2(zoom, zoom)
+	cam.position = (min_p + max_p) / 2.0
+	cam.make_current()
 
 
 # ================================================================ UI

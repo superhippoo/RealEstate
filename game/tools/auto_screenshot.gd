@@ -23,13 +23,15 @@ func _ready() -> void:
 
 
 func _place_debug_furniture() -> void:
-	var main = main_scene
+	var main: Variant = main_scene
 	var spots := {
 		"bed_single": Vector2i(1, 0),
-		"sofa_two": Vector2i(4, 4),
-		"tv_43": Vector2i(0, 7),
+		"sofa_two": Vector2i(9, 6),
+		"tv_43": Vector2i(1, 8),
+		"desk_small": Vector2i(11, 1),
+		"chair_basic": Vector2i(12, 4),
 	}
-	for def_id in ["bed_single", "sofa_two", "tv_43"]:
+	for def_id in ["bed_single", "sofa_two", "tv_43", "desk_small", "chair_basic"]:
 		var def: Dictionary = main.db.get_def(def_id)
 		var origin: Vector2i = spots[def_id]
 		if main.grid.can_place(def["grid_w"], def["grid_h"], origin, 0):
