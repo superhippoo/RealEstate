@@ -1,0 +1,57 @@
+{
+  "resolution": 1024,
+  "ortho_scale": 3.200000047683716,
+  "px_per_meter_x": 247.87087309033004,
+  "px_per_meter_y": 247.87095779608794,
+  "godot_scale": 2.0655912739278484,
+  "sprites": {
+    "bed_single": {
+      "frames": [
+        "bed_single_0.png",
+        "bed_single_90.png",
+        "bed_single_180.png",
+        "bed_single_270.png"
+      ],
+      "type": "furniture"
+    },
+    "sofa_two": {
+      "frames": [
+        "sofa_two_0.png",
+        "sofa_two_90.png",
+        "sofa_two_180.png",
+        "sofa_two_270.png"
+      ],
+      "type": "furniture"
+    },
+    "desk_small": {
+      "frames": [
+        "desk_small_0.png",
+        "desk_small_90.png",
+        "desk_small_180.png",
+        "desk_small_270.png"
+      ],
+      "type": "furniture"
+    },
+    "chair_basic": {
+      "frames": [
+        "chair_basic_0.png",
+        "chair_basic_90.png",
+        "chair_basic_180.png",
+        "chair_basic_270.png"
+      ],
+      "type": "furniture"
+    },
+    "tv_43": {
+      "frames": [
+        "tv_43_0.png",
+        "tv_43_90.png",
+        "tv_43_180.png",
+        "tv_43_270.png"
+      ],
+      "type": "furniture"
+    },
+    "char": {
+      "type": "character"
+    }
+  }
+}
