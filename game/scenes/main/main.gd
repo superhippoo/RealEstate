@@ -69,6 +69,7 @@ func _build_world() -> void:
 
 	room_renderer = load("res://scripts/ui/room_renderer.gd").new()
 	room_renderer.grid = grid
+	room_renderer.z_index = -100  # 방 이미지가 모든 배치물 아래에 그려지도록
 	room_root.add_child(room_renderer)
 
 	furniture_layer = Node2D.new()
@@ -201,6 +202,16 @@ func _rebuild_shop() -> void:
 		shop_rows.add_child(row)
 
 
+func _layer_of(def: Dictionary) -> int:
+	match String(def.get("layer", "FLOOR")):
+		"WALL":
+			return GridModel.Layer.WALL
+		"UNDERLAY":
+			return GridModel.Layer.UNDERLAY
+		_:
+			return GridModel.Layer.FLOOR
+
+
 func _fmt(v: int) -> String:
 	var s := str(v)
 	var out := ""
@@ -251,7 +262,7 @@ func _process(_delta: float) -> void:
 	var fp := GridModel.footprint_size(def["grid_w"], def["grid_h"], placement_rot)
 	var hover := IsoProjector.screen_to_grid(mouse_local)
 	var origin := hover - Vector2i(fp.x / 2, fp.y / 2)
-	var valid := grid.can_place(def["grid_w"], def["grid_h"], origin, placement_rot)
+	var valid := grid.can_place(def["grid_w"], def["grid_h"], origin, placement_rot, _layer_of(def))
 	room_renderer.set_preview(origin, fp, valid)
 
 	var center := IsoProjector.gridf_to_screen(origin.x + fp.x / 2.0, origin.y + fp.y / 2.0)
@@ -281,13 +292,14 @@ func _try_place_at_mouse() -> void:
 	var fp := GridModel.footprint_size(def["grid_w"], def["grid_h"], placement_rot)
 	var hover := IsoProjector.screen_to_grid(room_root.get_global_mouse_position())
 	var origin := hover - Vector2i(fp.x / 2, fp.y / 2)
-	if not grid.can_place(def["grid_w"], def["grid_h"], origin, placement_rot):
+	var layer := _layer_of(def)
+	if not grid.can_place(def["grid_w"], def["grid_h"], origin, placement_rot, layer):
 		return
 	if not economy.try_spend(def["price"]):
 		# 이 지점에 도달했다면 상점 열린 뒤 경제가 변한 경우 — 이중 방어
 		_rebuild_shop()
 		return
-	var iid := grid.place(placement_def_id, def["grid_w"], def["grid_h"], origin, placement_rot)
+	var iid := grid.place(placement_def_id, def["grid_w"], def["grid_h"], origin, placement_rot, layer)
 	var fs := FurnitureSprite.new()
 	fs.setup(iid, placement_def_id)
 	furniture_layer.add_child(fs)

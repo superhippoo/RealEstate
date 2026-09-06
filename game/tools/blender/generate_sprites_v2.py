@@ -324,12 +324,99 @@ def build_tv(root):
          bevel=0.006, rot=(0, 0, math.radians(18)))
 
 
+# ---------------------------------------------------------------- 소품 (루프 D)
+def build_rug(root):
+    """타원 러그 6x4셀(1.5x1m) — 세이지 테두리 + 크림 안감"""
+    sage = mat_fabric(PALETTE["sage"])
+    cream = mat_fabric(PALETTE["cream_deep"])
+    rug_o = rcyl("rug_outer", 0.5, 0.012, (0, 0, 0.006), sage, root)
+    rug_o.scale = (1.5, 1.0, 1.0)
+    rug_i = rcyl("rug_inner", 0.415, 0.014, (0, 0, 0.008), cream, root)
+    rug_i.scale = (1.5, 1.0, 1.0)
+
+
+def build_plant(root):
+    terr = mat_plain((0.80, 0.55, 0.45), 0.7)
+    soil = mat_plain((0.25, 0.20, 0.16), 0.95)
+    leaf = mat_plain((0.30, 0.50, 0.32), 0.6)
+    leaf_d = mat_plain((0.24, 0.42, 0.27), 0.6)
+    rcyl("pot", 0.11, 0.17, (0, 0, 0.085), terr, root)
+    rcyl("pot_rim", 0.125, 0.03, (0, 0, 0.165), terr, root)
+    rcyl("soil", 0.095, 0.02, (0, 0, 0.175), soil, root)
+    for i, (ang, r, z, s, m) in enumerate([
+        (0, 0.05, 0.42, 0.16, leaf), (2.2, 0.06, 0.50, 0.19, leaf_d),
+        (4.3, 0.04, 0.38, 0.14, leaf_d), (1.1, 0.07, 0.58, 0.17, leaf),
+        (3.2, 0.05, 0.64, 0.13, leaf), (5.4, 0.03, 0.33, 0.12, leaf_d)]):
+        leaf_s = rsphere("leaf%d" % i, r, (math.cos(ang) * s, math.sin(ang) * s * 0.6, z), m, root)
+        leaf_s.scale = (0.55, 1.35, 0.85)
+
+
+def build_floor_lamp(root):
+    dark = mat_plain((0.25, 0.24, 0.23), 0.4)
+    shade = mat_fabric((0.96, 0.90, 0.78))
+    rcyl("base", 0.15, 0.025, (0, 0, 0.0125), dark, root)
+    rcyl("pole", 0.012, 1.30, (0, 0, 0.67), mat_plain((0.72, 0.70, 0.66), 0.35), root)
+    lamp_shade = rcyl("shade", 0.14, 0.24, (0, 0, 1.38), shade, root)
+    lamp_shade.scale = (1.25, 1.25, 1.0)
+    glow = rcyl("glow", 0.10, 0.02, (0, 0, 1.27), mat_plain((1.0, 0.93, 0.75)), root)
+    bsdf = glow.data.materials[0].node_tree.nodes.get("Principled BSDF")
+    bsdf.inputs["Emission Color"].default_value = (1.0, 0.88, 0.65, 1)
+    bsdf.inputs["Emission Strength"].default_value = 1.6
+
+
+def build_side_table(root):
+    wood = mat_wood(PALETTE["wood_mid"])
+    wood_d = mat_wood(PALETTE["wood_dark"], scale=28.0)
+    rcyl("top", 0.24, 0.03, (0, 0, 0.45), wood, root)
+    for i in range(3):
+        ang = i * 2.094
+        rcyl("leg%d" % i, 0.014, 0.45, (math.cos(ang) * 0.15, math.sin(ang) * 0.15, 0.225), wood_d, root,
+             rot=(math.cos(ang) * 0.12, math.sin(ang) * 0.12, 0))
+    rcyl("mug2", 0.032, 0.075, (0.07, 0.02, 0.502), mat_plain(PALETTE["terracotta"]), root)
+    rbox("book3", (0.15, 0.10, 0.022), (-0.08, -0.03, 0.476), mat_plain(PALETTE["sage"]), root,
+         bevel=0.004, rot=(0, 0, math.radians(24)))
+
+
+def build_picture(root):
+    """벽 액자 2x2셀 — 바닥 원점 기준 z 1.2 부근에 걸림(벽면 아이템)"""
+    wood_d = mat_wood(PALETTE["wood_dark"], scale=30.0)
+    canvas = mat_plain((0.965, 0.95, 0.91), 0.85)
+    rbox("frame", (0.46, 0.56, 0.035), (0, 0, 1.20), wood_d, root, bevel=0.012)
+    rbox("canvas", (0.40, 0.50, 0.012), (0, 0.012, 1.20), canvas, root, bevel=0.004)
+    rbox("art1", (0.16, 0.22, 0.008), (-0.08, 0.022, 1.26), mat_plain(PALETTE["sage"]), root, bevel=0.003)
+    rbox("art2", (0.11, 0.14, 0.008), (0.08, 0.022, 1.15), mat_plain(PALETTE["terracotta"]), root, bevel=0.003)
+    rbox("art3", (0.07, 0.07, 0.008), (0.05, 0.022, 1.30), mat_plain((0.90, 0.70, 0.32)), root, bevel=0.003)
+
+
+def build_wall_shelf(root):
+    """벽 선반 4x1셀 — z 1.15 보드 + 소품"""
+    wood = mat_wood(PALETTE["wood_mid"])
+    wood_d = mat_wood(PALETTE["wood_dark"], scale=28.0)
+    rbox("board", (1.0, 0.18, 0.035), (0, 0, 1.15), wood, root, bevel=0.01)
+    for x in (-0.42, 0.42):
+        rbox("bracket", (0.03, 0.02, 0.10), (x, 0.0, 1.09), wood_d, root, bevel=0.005)
+    rbox("wb1", (0.035, 0.13, 0.17), (-0.30, 0, 1.25), mat_plain(PALETTE["sage"]), root, bevel=0.004)
+    rbox("wb2", (0.035, 0.11, 0.15), (-0.25, 0, 1.24), mat_plain((0.75, 0.80, 0.88)), root, bevel=0.004)
+    rbox("wb3", (0.035, 0.14, 0.12), (-0.20, 0.004, 1.225), mat_plain(PALETTE["terracotta"]), root, bevel=0.004,
+         rot=(0, 0, 0.12))
+    rbox("mini_frame", (0.14, 0.18, 0.015), (0.12, 0.02, 1.25), mat_wood(PALETTE["wood_dark"], scale=30.0), root,
+         bevel=0.005, rot=(0.25, 0, 0))
+    rcyl("pot3", 0.045, 0.07, (0.38, 0, 1.20), mat_plain((0.80, 0.55, 0.45)), root)
+    rsphere("plant3", 0.06, (0.38, 0, 1.27), mat_plain((0.32, 0.52, 0.34)), root)
+
+
 FURNITURE = {
     "bed_single": build_bed,
     "sofa_two": build_sofa,
     "desk_small": build_desk,
     "chair_basic": build_chair,
     "tv_43": build_tv,
+    "rug_oval": build_rug,
+    "plant_monstera": build_plant,
+    "floor_lamp": build_floor_lamp,
+    "side_table": build_side_table,
+    "picture_frame": build_picture,
+    "wall_shelf": build_wall_shelf,
 }
 
 
@@ -351,6 +438,16 @@ def build_character(root):
     rsphere("hair_cap", 0.141, (0, -0.008, 0.604), hair, root, scale=(1.0, 1.0, 0.92))
     rbox("fringe", (0.214, 0.064, 0.075), (0, 0.112, 0.614), hair, root, bevel=0.02, subsurf=2,
          rot=(math.radians(12), 0, 0))
+    # 얼굴: 눈 2개 + 볼터치 + 입
+    eye = mat_plain((0.16, 0.13, 0.11), 0.3)
+    rsphere("eye_l", 0.015, (-0.048, 0.122, 0.588), eye, root)
+    rsphere("eye_r", 0.015, (0.048, 0.122, 0.588), eye, root)
+    blush = mat_plain((0.94, 0.62, 0.55), 0.8)
+    b_l = rsphere("blush_l", 0.018, (-0.082, 0.108, 0.573), blush, root)
+    b_l.scale = (1.0, 0.5, 0.7)
+    b_r = rsphere("blush_r", 0.018, (0.082, 0.108, 0.573), blush, root)
+    b_r.scale = (1.0, 0.5, 0.7)
+    rsphere("mouth", 0.008, (0, 0.128, 0.548), eye, root)
     # 팔(소매 없는 간단 봉)
     CHAR_PARTS["arm_l"] = rbox("arm_l", (0.048, 0.048, 0.182), (-0.187, 0, 0.364), top, root, bevel=0.02)
     CHAR_PARTS["arm_r"] = rbox("arm_r", (0.048, 0.048, 0.182), (0.187, 0, 0.364), top, root, bevel=0.02)

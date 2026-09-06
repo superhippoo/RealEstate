@@ -43,7 +43,11 @@ func refresh(placement: GridModel.Placement) -> void:
 	var center_y := placement.origin.y + fp.y / 2.0
 	# 다이아 셀 (x,y)의 중심은 (x+0.5, y+0.5)
 	position = IsoProjector.gridf_to_screen(center_x, center_y)
-	z_index = int(position.y)
+	match placement.layer:
+		GridModel.Layer.UNDERLAY:
+			z_index = -50   # 러그: 방 이미지(-100) 위, 모든 가구 아래
+		_:
+			z_index = int(position.y)
 	var tex_path := SPRITE_DIR + "%s_%d.png" % [def_id, placement.rotation]
 	var tex := load(tex_path)
 	if tex:

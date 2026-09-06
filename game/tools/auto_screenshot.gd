@@ -29,13 +29,21 @@ func _place_debug_furniture() -> void:
 		"sofa_two": Vector2i(9, 6),
 		"tv_43": Vector2i(1, 8),
 		"desk_small": Vector2i(11, 1),
-		"chair_basic": Vector2i(12, 4),
+		"chair_basic": Vector2i(13, 3),
+		"rug_oval": Vector2i(8, 5),
+		"plant_monstera": Vector2i(14, 0),
+		"floor_lamp": Vector2i(7, 5),
+		"side_table": Vector2i(14, 9),
+		"picture_frame": Vector2i(0, 2),
+		"wall_shelf": Vector2i(5, 0),
 	}
-	for def_id in ["bed_single", "sofa_two", "tv_43", "desk_small", "chair_basic"]:
+	for def_id in ["rug_oval", "bed_single", "sofa_two", "tv_43", "desk_small", "chair_basic",
+			"plant_monstera", "floor_lamp", "side_table", "picture_frame", "wall_shelf"]:
 		var def: Dictionary = main.db.get_def(def_id)
 		var origin: Vector2i = spots[def_id]
-		if main.grid.can_place(def["grid_w"], def["grid_h"], origin, 0):
-			var iid: int = main.grid.place(def_id, def["grid_w"], def["grid_h"], origin, 0)
+		var layer: int = main._layer_of(def)
+		if main.grid.can_place(def["grid_w"], def["grid_h"], origin, 0, layer):
+			var iid: int = main.grid.place(def_id, def["grid_w"], def["grid_h"], origin, 0, layer)
 			var fs := FurnitureSprite.new()
 			fs.setup(iid, def_id)
 			main.furniture_layer.add_child(fs)

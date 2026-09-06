@@ -12,6 +12,7 @@ func _initialize() -> void:
 	_test_grid_rotation()
 	_test_local_to_room()
 	_test_economy()
+	_test_layers()
 	print("\n========================================")
 	print("PASSED %d / FAILED %d" % [passed, failed])
 	quit(1 if failed > 0 else 0)
@@ -67,6 +68,21 @@ func _test_local_to_room() -> void:
 	_check("local rot90", GridModel.local_to_room(Vector2i(0, 0), Vector2i(0, 0), 4, 8, 90) == Vector2i(7, 0))
 	_check("local rot180", GridModel.local_to_room(Vector2i(0, 0), Vector2i(0, 0), 4, 8, 180) == Vector2i(3, 7))
 	_check("local rot270", GridModel.local_to_room(Vector2i(0, 0), Vector2i(0, 0), 4, 8, 270) == Vector2i(0, 3))
+
+
+func _test_layers() -> void:
+	var g := GridModel.new(16, 12)
+	# 러그(UNDERLAY): 어디든, 무충돌
+	_check("rug place under bed area", g.place("rug", 6, 4, Vector2i(4, 4), 0, GridModel.Layer.UNDERLAY) > 0)
+	var bed := g.place("bed", 4, 8, Vector2i(1, 0), 0, GridModel.Layer.FLOOR)
+	_check("bed over rug ok", bed > 0)
+	_check("rug not blocking pathfinding", g.occupied_cells().size() == 32)  # 침대만
+	# 벽걸이(WALL): 벽면 행만, FLOOR와 무충돌
+	_check("wall item at gx=0 ok", g.place("pic", 2, 2, Vector2i(0, 2), 0, GridModel.Layer.WALL) > 0)
+	_check("wall item mid-room rejected", g.can_place(2, 2, Vector2i(5, 5), 0, GridModel.Layer.WALL) == false)
+	_check("wall collides with wall", g.can_place(2, 2, Vector2i(0, 2), 0, GridModel.Layer.WALL) == false)
+	_check("floor item under wall item ok", g.can_place(2, 2, Vector2i(0, 9), 0, GridModel.Layer.FLOOR) == true)
+	_check("wall item not in pathfinding", g.occupied_cells().size() == 32)
 
 
 # ---------------------------------------------------------------- Economy
