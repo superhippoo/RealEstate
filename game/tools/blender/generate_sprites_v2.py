@@ -463,8 +463,8 @@ def setup_scene():
 
 def place_camera(cam, focus_z):
     d = 10.0
-    az = math.radians(45)
-    el = math.atan(0.5)
+    az = math.radians(315)  # 코너 정면 시점 — 렌더 후 수포반전(flop)하면 게임 그리드 관례와 일치
+    el = math.radians(30.0)  # 2:1 다이아몬드(기울기 0.5) 정확 고도각
     cam.location = (d * math.cos(el) * math.cos(az), -d * math.cos(el) * math.sin(az), d * math.sin(el) + focus_z)
     direction = Vector((0, 0, focus_z)) - cam.location
     cam.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()

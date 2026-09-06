@@ -1,9 +1,9 @@
 {
   "resolution": 1024,
   "ortho_scale": 3.2,
-  "px_per_meter_x": 247.87087309033004,
-  "px_per_meter_y": 247.87095779608794,
-  "godot_scale": 1.154700621039892,
+  "px_per_meter_x": 252.98221667367253,
+  "px_per_meter_y": 252.98215877063348,
+  "godot_scale": 1.1313709576831867,
   "sprites": {
     "bed_single": {
       "frames": [
