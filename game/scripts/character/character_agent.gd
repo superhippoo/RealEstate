@@ -19,13 +19,36 @@ var _last_furniture_id := -1     # 반복 방지 v0
 var _facing := 1                 # 0:E 1:S 2:W 3:N
 
 static var godot_scale := 1.0
+static var _ai_char_tex: Texture2D
+static var _ai_char_scale := 1.0
+static var _ai_char_checked := false
+
+
+static func _load_ai_char() -> void:
+	if _ai_char_checked:
+		return
+	_ai_char_checked = true
+	var tex := load("res://assets/ai_sprites/char.png")
+	if tex:
+		_ai_char_tex = tex
+		var f := FileAccess.open("res://assets/ai_sprites/manifest.json", FileAccess.READ)
+		var target_h := 340.0
+		if f:
+			var m = JSON.parse_string(f.get_as_text())
+			if m is Dictionary and m.has("char") and m["char"].has("target_h"):
+				target_h = float(m["char"]["target_h"])
+		_ai_char_scale = target_h / float(tex.get_height())
 
 
 func setup(p_main) -> void:
 	main = p_main
 	FurnitureSprite.load_manifest()
 	godot_scale = FurnitureSprite.godot_scale
-	scale = Vector2(godot_scale, godot_scale)
+	_load_ai_char()
+	if _ai_char_tex:
+		scale = Vector2(_ai_char_scale, _ai_char_scale)
+	else:
+		scale = Vector2(godot_scale, godot_scale)
 	centered = true
 	_refresh_pos()
 	_set_texture("char_idle_%d" % _facing)
@@ -191,6 +214,10 @@ func notify_grid_changed() -> void:
 
 
 func _set_texture(path: String) -> void:
+	# AI 캐릭터가 있으면 단일 스프라이트 사용(포즈 전환은 후속 과제)
+	if _ai_char_tex:
+		texture = _ai_char_tex
+		return
 	var tex := load("res://assets/sprites/%s.png" % path)
 	if tex:
 		texture = tex

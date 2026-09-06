@@ -26,11 +26,11 @@ func _place_debug_furniture() -> void:
 	var main: Variant = main_scene
 	var spots := {
 		"bed_single": Vector2i(1, 0),
+		"rug_oval": Vector2i(8, 5),
 		"sofa_two": Vector2i(9, 6),
 		"tv_43": Vector2i(1, 8),
 		"desk_small": Vector2i(11, 1),
 		"chair_basic": Vector2i(13, 3),
-		"rug_oval": Vector2i(8, 5),
 		"plant_monstera": Vector2i(14, 0),
 		"floor_lamp": Vector2i(7, 5),
 		"side_table": Vector2i(14, 9),

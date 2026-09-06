@@ -6,6 +6,7 @@ var grid: GridModel
 
 const ROOM_TEX := "res://assets/sprites/room_shell.png"
 const ROOM_MANIFEST := "res://assets/sprites/room_manifest.json"
+const AI_ROOM_TEX := "res://assets/ai_sprites/room_bg.png"
 
 # 폴백 팔레트
 const FLOOR_BASE := Color(0.847, 0.659, 0.424)
@@ -56,7 +57,16 @@ func _load_room() -> void:
 func _draw() -> void:
 	if grid == null:
 		return
-	if room_tex:
+	# 1순위: AI 생성 방 배경 — 방 전체 바운드에 스트레치
+	var ai_tex := load(AI_ROOM_TEX)
+	if ai_tex:
+		var xs := [_corner(0, 0).x, _corner(grid.width, 0).x, _corner(0, grid.height).x, _corner(grid.width, grid.height).x]
+		var ys := [_corner(0, 0).y, _corner(grid.width, 0).y, _corner(0, grid.height).y, _corner(grid.width, grid.height).y]
+		var rect := Rect2(Vector2(minf(xs[0], xs[2]), minf(ys[0], ys[1])) - Vector2(120, 560),
+				Vector2(maxf(xs[1], xs[3]) - minf(xs[0], xs[2]) + 240,
+						maxf(ys[2], ys[3]) - minf(ys[0], ys[1]) + 700))
+		draw_texture_rect(ai_tex, rect, true)
+	elif room_tex:
 		draw_texture_rect(room_tex, room_draw, false)
 	else:
 		_draw_fallback_floor()

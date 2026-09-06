@@ -240,11 +240,12 @@ func _start_placement(def_id: String) -> void:
 		ghost.centered = true
 		room_root.add_child(ghost)
 	FurnitureSprite.load_manifest()
-	ghost.scale = Vector2(FurnitureSprite.godot_scale, FurnitureSprite.godot_scale)
+	var def0: Dictionary = db.get_def(def_id)
+	var ti := FurnitureSprite.load_texture(def_id, 0, def0["grid_w"], def0["grid_h"])
+	if not ti.is_empty():
+		ghost.texture = ti["texture"]
+		ghost.scale = Vector2(ti["scale"], ti["scale"])
 	ghost.modulate = Color(1, 1, 1, 0.6)
-	var tex := load("res://assets/sprites/%s_0.png" % def_id)
-	if tex:
-		ghost.texture = tex
 
 
 func _cancel_placement() -> void:
@@ -269,9 +270,11 @@ func _process(_delta: float) -> void:
 	ghost.position = center
 	ghost.z_index = 2000
 	ghost.visible = true
-	var tex := load("res://assets/sprites/%s_%d.png" % [placement_def_id, placement_rot])
-	if tex:
-		ghost.texture = tex
+	var ti := FurnitureSprite.load_texture(placement_def_id, placement_rot, def["grid_w"], def["grid_h"])
+	if not ti.is_empty():
+		ghost.texture = ti["texture"]
+		ghost.scale = Vector2(ti["scale"], ti["scale"])
+		ghost.flip_h = ti["flip_h"]
 	ghost.modulate = Color(1, 1, 1, 0.6) if valid else Color(1, 0.4, 0.35, 0.55)
 
 

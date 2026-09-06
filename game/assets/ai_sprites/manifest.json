@@ -1,0 +1,93 @@
+{
+  "room_bg": {
+    "seed": 1001
+  },
+  "bed_single": {
+    "seed": 2000,
+    "cells": [
+      4,
+      8
+    ]
+  },
+  "sofa_two": {
+    "seed": 2017,
+    "cells": [
+      6,
+      3
+    ]
+  },
+  "desk_small": {
+    "seed": 2034,
+    "cells": [
+      5,
+      2
+    ]
+  },
+  "chair_basic": {
+    "seed": 2051,
+    "cells": [
+      2,
+      2
+    ],
+    "scale_factor": 0.82
+  },
+  "tv_43": {
+    "seed": 2068,
+    "cells": [
+      4,
+      2
+    ]
+  },
+  "rug_oval": {
+    "seed": 2085,
+    "cells": [
+      6,
+      4
+    ]
+  },
+  "plant_monstera": {
+    "seed": 2102,
+    "cells": [
+      2,
+      2
+    ],
+    "scale_factor": 0.9
+  },
+  "floor_lamp": {
+    "seed": 2119,
+    "cells": [
+      2,
+      2
+    ],
+    "scale_factor": 0.95
+  },
+  "side_table": {
+    "seed": 2136,
+    "cells": [
+      2,
+      2
+    ],
+    "scale_factor": 0.88
+  },
+  "picture_frame": {
+    "seed": 2153,
+    "cells": [
+      2,
+      2
+    ],
+    "scale_factor": 0.85
+  },
+  "wall_shelf": {
+    "seed": 2170,
+    "cells": [
+      4,
+      1
+    ],
+    "scale_factor": 0.9
+  },
+  "char": {
+    "seed": 9001,
+    "scale_mode": "height",
+    "target_h": 340
+  }
+}
