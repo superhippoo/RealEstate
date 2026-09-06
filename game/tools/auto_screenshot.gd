@@ -58,5 +58,20 @@ func _process(delta: float) -> void:
 		print("SHOT: capturing")
 		var img := get_viewport().get_texture().get_image()
 		img.save_png(out_path)
+		# 픽셀 회귀 게이트: 순백/순흑 지배 화면(배경 렌더 실패) 자동 실패
+		var white := 0
+		var total := 0
+		for y in range(0, img.get_height(), 6):
+			for x in range(0, img.get_width(), 6):
+				var c := img.get_pixel(x, y)
+				total += 1
+				if c.r > 0.94 and c.g > 0.94 and c.b > 0.94:
+					white += 1
+		var ratio := float(white) / float(total)
+		if ratio > 0.5:
+			push_error("PIXEL_GATE_FAIL: 화면의 %.0f%%가 순백 — 배경 렌더 실패" % (ratio * 100))
+			print("PIXEL_GATE_FAIL ", ratio)
+		else:
+			print("PIXEL_GATE_OK white_ratio=%.2f" % ratio)
 		print("SCREENSHOT_SAVED ", ProjectSettings.globalize_path(out_path))
 		get_tree().quit()

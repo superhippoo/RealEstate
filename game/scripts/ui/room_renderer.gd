@@ -6,7 +6,9 @@ var grid: GridModel
 
 const ROOM_TEX := "res://assets/sprites/room_shell.png"
 const ROOM_MANIFEST := "res://assets/sprites/room_manifest.json"
-const AI_ROOM_TEX := "res://assets/ai_sprites/room_bg.png"
+const AI_ROOM_TEX := "res://assets/ai_sprites/room_bg_ai.png"
+
+var bg_sprite: Sprite2D
 
 # 폴백 팔레트
 const FLOOR_BASE := Color(0.847, 0.659, 0.424)
@@ -57,20 +59,44 @@ func _load_room() -> void:
 func _draw() -> void:
 	if grid == null:
 		return
-	# 1순위: AI 생성 방 배경 — 방 전체 바운드에 스트레치
-	var ai_tex := load(AI_ROOM_TEX)
-	if ai_tex:
-		var xs := [_corner(0, 0).x, _corner(grid.width, 0).x, _corner(0, grid.height).x, _corner(grid.width, grid.height).x]
-		var ys := [_corner(0, 0).y, _corner(grid.width, 0).y, _corner(0, grid.height).y, _corner(grid.width, grid.height).y]
-		var rect := Rect2(Vector2(minf(xs[0], xs[2]), minf(ys[0], ys[1])) - Vector2(120, 560),
-				Vector2(maxf(xs[1], xs[3]) - minf(xs[0], xs[2]) + 240,
-						maxf(ys[2], ys[3]) - minf(ys[0], ys[1]) + 700))
-		draw_texture_rect(ai_tex, rect, true)
-	elif room_tex:
-		draw_texture_rect(room_tex, room_draw, false)
-	else:
+	# AI 방 배경은 Sprite2D로 드로잉(임포트/드로잉 경로 안정화)
+	if bg_sprite == null:
+		var ai_tex := load(AI_ROOM_TEX)
+		if ai_tex:
+			bg_sprite = Sprite2D.new()
+			bg_sprite.texture = ai_tex
+			bg_sprite.centered = false
+			add_child(bg_sprite)
+			_layout_bg()
+		elif room_tex:
+			# 폴백: 절차적 room_shell
+			var rs := Sprite2D.new()
+			rs.texture = room_tex
+			rs.centered = false
+			add_child(rs)
+			_layout_shell(rs)
+	if bg_sprite == null and room_tex == null:
 		_draw_fallback_floor()
 	_draw_preview()
+
+
+func _layout_bg() -> void:
+	# 방 전체 바운드에 스트레치
+	var c00 := _corner(0, 0)
+	var cw0 := _corner(grid.width, 0)
+	var c0h := _corner(0, grid.height)
+	var cwh := _corner(grid.width, grid.height)
+	var pos := Vector2(minf(c00.x, c0h.x), minf(c00.y, cw0.y)) - Vector2(120, 560)
+	var end := Vector2(maxf(cw0.x, cwh.x), maxf(c0h.y, cwh.y)) + Vector2(120, 140)
+	var size := end - pos
+	var tex := bg_sprite.texture
+	bg_sprite.position = pos
+	bg_sprite.scale = Vector2(size.x / tex.get_width(), size.y / tex.get_height())
+
+
+func _layout_shell(rs: Sprite2D) -> void:
+	rs.position = room_draw.position
+	rs.scale = room_draw.size / Vector2(rs.texture.get_width(), rs.texture.get_height())
 
 
 func _corner(gx: float, gy: float) -> Vector2:
