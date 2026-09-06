@@ -50,6 +50,60 @@
       ],
       "type": "furniture"
     },
+    "rug_oval": {
+      "frames": [
+        "rug_oval_0.png",
+        "rug_oval_90.png",
+        "rug_oval_180.png",
+        "rug_oval_270.png"
+      ],
+      "type": "furniture"
+    },
+    "plant_monstera": {
+      "frames": [
+        "plant_monstera_0.png",
+        "plant_monstera_90.png",
+        "plant_monstera_180.png",
+        "plant_monstera_270.png"
+      ],
+      "type": "furniture"
+    },
+    "floor_lamp": {
+      "frames": [
+        "floor_lamp_0.png",
+        "floor_lamp_90.png",
+        "floor_lamp_180.png",
+        "floor_lamp_270.png"
+      ],
+      "type": "furniture"
+    },
+    "side_table": {
+      "frames": [
+        "side_table_0.png",
+        "side_table_90.png",
+        "side_table_180.png",
+        "side_table_270.png"
+      ],
+      "type": "furniture"
+    },
+    "picture_frame": {
+      "frames": [
+        "picture_frame_0.png",
+        "picture_frame_90.png",
+        "picture_frame_180.png",
+        "picture_frame_270.png"
+      ],
+      "type": "furniture"
+    },
+    "wall_shelf": {
+      "frames": [
+        "wall_shelf_0.png",
+        "wall_shelf_90.png",
+        "wall_shelf_180.png",
+        "wall_shelf_270.png"
+      ],
+      "type": "furniture"
+    },
     "char": {
       "type": "character"
     }

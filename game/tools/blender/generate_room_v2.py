@@ -136,6 +136,7 @@ def build_room():
     box("trim_y0", (ROOM_W, 0.03, 0.03), (ROOM_W / 2, -WALL_T - 0.005, WALL_H - 0.015), mat_base(PALETTE["trim"], 0.7), bevel=0.006)
     box("trim_x0", (0.03, ROOM_H, 0.03), (-WALL_T - 0.005, ROOM_H / 2, WALL_H - 0.015), mat_base(PALETTE["trim"], 0.7), bevel=0.006)
     build_window()
+    build_kitchen()
 
 
 def build_window():
@@ -169,6 +170,93 @@ def build_window():
         dis = c.modifiers.new("displace", "DISPLACE")
         dis.texture = tex
         dis.strength = 0.008
+
+
+
+
+def build_kitchen():
+    """붙박이 주방(고정설비, 06_house_grid: 욕실/주방은 고정용도) - -Y 벽(gy=0 변)을 따라 L자"""
+    wood_m = mat_wood(PALETTE["wood_mid"], scale=20.0, rough=0.5)
+    wood_d = mat_wood(PALETTE["wood_dark"], scale=24.0)
+    counter_m = mat_base((0.93, 0.88, 0.80), 0.30, bump_scale=0.15)  # 인공대리석
+    cream_m = mat_base((0.945, 0.905, 0.855), 0.7)
+    steel = mat_base((0.75, 0.76, 0.78), 0.25)
+    tile = mat_base((0.95, 0.93, 0.89), 0.25, bump_scale=0.4)
+    KD = 0.62  # 주방 깊이
+
+    # --- 하부 캐비닛 (x 0~3.2m, -Y 벽 따라) ---
+    cab_h = 0.82
+    for i in range(4):
+        seg_w = 0.78
+        x0 = 0.05 + i * (seg_w + 0.015)
+        if x0 + seg_w > 3.25:
+            seg_w = 3.25 - x0
+        box("kcab_%d" % i, (seg_w, KD, cab_h - 0.10), (x0 + seg_w / 2, KD / 2 + 0.02, (cab_h - 0.10) / 2 + 0.08), wood_m, bevel=0.012)
+        # 슬릿 손잡이
+        box("khandle_%d" % i, (seg_w - 0.12, 0.015, 0.018), (x0 + seg_w / 2, KD + 0.028, cab_h - 0.16), wood_d, bevel=0.004)
+    # 카운터
+    box("kcounter", (3.35, KD + 0.06, 0.045), (3.35 / 2, KD / 2 + 0.02, cab_h), counter_m, bevel=0.010)
+    # 싱크(원형 보울) + 도마 + 커피머신
+    bpy.ops.mesh.primitive_cylinder_add(radius=0.16, depth=0.02, location=(0.55, KD / 2 + 0.02, cab_h + 0.012))
+    sink = bpy.context.active_object
+    sink.name = "ksink"
+    sink.data.materials.append(steel)
+    box("kboard", (0.34, 0.24, 0.018), (1.55, KD / 2 + 0.02, cab_h + 0.022), mat_wood((0.78, 0.72, 0.60), scale=40.0), bevel=0.008)
+    box("kcoffee", (0.16, 0.14, 0.24), (2.35, KD / 2 - 0.02, cab_h + 0.13), mat_base((0.25, 0.24, 0.23), 0.4), bevel=0.010)
+    box("kmug_a", (0.05, 0.05, 0.06), (2.12, KD / 2, cab_h + 0.03), mat_base((0.85, 0.50, 0.38), 0.6), bevel=0.006)
+    box("kplate", (0.14, 0.14, 0.012), (1.15, KD / 2 + 0.05, cab_h + 0.02), mat_base((0.96, 0.94, 0.90), 0.3), bevel=0.004, rot=(0, 0, 0.5))
+
+    # --- 백스플래시 타일 ---
+    box("ktile", (3.35, 0.02, 0.52), (3.35 / 2, 0.045, cab_h + 0.27), tile)
+    # --- 상부 캐비닛(크림) x 일부 + 후드 ---
+    box("kupper", (1.35, 0.34, 0.62), (0.75, 0.19, cab_h + 0.27 + 0.62 / 2 + 0.28), cream_m, bevel=0.012)
+    hood = box("khood", (0.55, 0.36, 0.42), (2.05, 0.20, cab_h + 0.55), steel, bevel=0.014)
+    box("khood_duct", (0.22, 0.22, 0.35), (2.05, 0.20, cab_h + 0.95), steel, bevel=0.010)
+    # --- 냉장고(끝에, 크림 프런치도어) ---
+    box("kfridge", (0.62, 0.66, 1.72), (3.25 - 0.31, 0.35, 1.72 / 2), cream_m, bevel=0.020)
+    box("kf_handle1", (0.02, 0.04, 0.55), (2.95, 0.69, 1.30), mat_base((0.72, 0.70, 0.66), 0.3), bevel=0.006)
+    box("kf_handle2", (0.02, 0.04, 0.38), (2.95, 0.69, 0.75), mat_base((0.72, 0.70, 0.66), 0.3), bevel=0.006)
+    # --- 펜던트 조명 2(글로브) + 에미션 ---
+    for i, px in enumerate((1.05, 1.75)):
+        bpy.ops.mesh.primitive_uv_sphere_add(radius=0.075, location=(px, KD / 2 + 0.02, cab_h + 0.72))
+        g = bpy.context.active_object
+        g.name = "kpendant_%d" % i
+        gm = mat_base((1.0, 0.96, 0.88), 0.5)
+        gb = gm.node_tree.nodes.get("Principled BSDF")
+        gb.inputs["Emission Color"].default_value = (1.0, 0.90, 0.70, 1)
+        gb.inputs["Emission Strength"].default_value = 1.2
+        g.data.materials.append(gm)
+        for p in g.data.polygons:
+            p.use_smooth = True
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.004, depth=0.5, location=(px, KD / 2 + 0.02, cab_h + 1.0))
+        w = bpy.context.active_object
+        w.data.materials.append(mat_base((0.2, 0.2, 0.2), 0.4))
+    # --- 대형 몬스테라(주방 끝 코너) ---
+    rc = rcyl_k("kplant_pot", 0.14, 0.30, (3.55, 0.5, 0.15), mat_base((0.80, 0.55, 0.45), 0.7))
+    for i in range(7):
+        ang = i * 0.9
+        leaf = sp_k("kleaf_%d" % i, 0.11, (3.55 + math.cos(ang) * 0.16, 0.5 + math.sin(ang) * 0.10, 0.52 + i * 0.045),
+                    mat_base((0.22, 0.42, 0.25), 0.55))
+        leaf.scale = (0.45, 1.5, 0.75)
+        leaf.rotation_euler = (0, 0, ang)
+
+
+def rcyl_k(name, r, depth, loc, m):
+    bpy.ops.mesh.primitive_cylinder_add(radius=r, depth=depth, location=loc, vertices=24)
+    o = bpy.context.active_object
+    o.name = name
+    o.data.materials.append(m)
+    return o
+
+
+def sp_k(name, r, loc, m):
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=r, location=loc, segments=24, ring_count=14)
+    o = bpy.context.active_object
+    o.name = name
+    o.data.materials.append(m)
+    for p in o.data.polygons:
+        p.use_smooth = True
+    return o
 
 
 def setup_scene():
