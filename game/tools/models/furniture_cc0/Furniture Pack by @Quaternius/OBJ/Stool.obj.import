@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://bpr633jt503b"
+path="res://.godot/imported/Stool.obj-b0c954f852e2754c2d63f787fbf9e300.mesh"
+
+[deps]
+
+files=["res://.godot/imported/Stool.obj-b0c954f852e2754c2d63f787fbf9e300.mesh"]
+
+source_file="res://tools/models/furniture_cc0/Furniture Pack by @Quaternius/OBJ/Stool.obj"
+dest_files=["res://.godot/imported/Stool.obj-b0c954f852e2754c2d63f787fbf9e300.mesh", "res://.godot/imported/Stool.obj-b0c954f852e2754c2d63f787fbf9e300.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

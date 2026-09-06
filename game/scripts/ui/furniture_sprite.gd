@@ -1,17 +1,13 @@
 class_name FurnitureSprite
 extends Sprite2D
 ## 가구 인스턴스의 표현. 논리 상태는 GridModel.Placement가 소유.
-## AI 생성 스프라이트(assets/ai_sprites/{id}.png)를 우선 사용하고,
-## 없으면 절차적 렌더(sprites/{id}_{rot}.png)로 폴백.
+## 스프라이트: assets/sprites/{def_id}_{rot}.png (그리드 정합 렌더)
 
-const AI_DIR := "res://assets/ai_sprites/"
 const SPRITE_DIR := "res://assets/sprites/"
 const MANIFEST_PATH := "res://assets/sprites/manifest.json"
 
 static var godot_scale := 1.0
 static var _manifest_loaded := false
-static var _ai_manifest := {}
-static var _ai_manifest_loaded := false
 
 
 static func load_manifest() -> void:
@@ -28,30 +24,10 @@ static func load_manifest() -> void:
 	_manifest_loaded = true
 
 
-static func _load_ai_manifest() -> void:
-	if _ai_manifest_loaded:
-		return
-	var f := FileAccess.open(AI_DIR + "manifest.json", FileAccess.READ)
-	if f:
-		_ai_manifest = JSON.parse_string(f.get_as_text())
-		if _ai_manifest == null:
-			_ai_manifest = {}
-	_ai_manifest_loaded = true
-
-
-## 통합 로더: AI 스프라이트 우선, 폴백 절차적 4방향.
-## 반환: {texture, scale, flip_h} or null
+## 통합 로더: 그리드 정합 스프라이트(sprites/{id}_{rot}.png, CC0/절차적 렌더).
+## 반환: {texture, scale, flip_h} or empty
 static func load_texture(def_id: String, rot: int, def_w: int, def_h: int) -> Dictionary:
 	load_manifest()
-	var ai_tex := load(AI_DIR + def_id + ".png")
-	if ai_tex:
-		_load_ai_manifest()
-		var target_w: float = (def_w + def_h) * IsoProjector.TILE_WIDTH * 0.5 * godot_scale
-		var s: float = target_w / float(ai_tex.get_width())
-		var entry = _ai_manifest.get(def_id)
-		if entry is Dictionary and entry.has("scale_factor"):
-			s *= float(entry["scale_factor"])
-		return {"texture": ai_tex, "scale": s, "flip_h": rot == 180}
 	var tex := load(SPRITE_DIR + "%s_%d.png" % [def_id, rot])
 	if tex:
 		return {"texture": tex, "scale": godot_scale, "flip_h": false}
