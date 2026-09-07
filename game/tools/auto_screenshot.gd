@@ -3,7 +3,7 @@ extends Node
 ## MVP 시각 검증용. 씬에 오토포드 없이 main.tscn 다음에 이 노드로 씬 교체 실행:
 ## godot --path . res://tools/auto_screenshot.tscn
 
-var main_scene: Node2D
+var main_scene: Node
 var elapsed := 0.0
 var shot_at := 5.0
 var out_path := "user://mvp_screenshot.png"
@@ -44,11 +44,9 @@ func _place_debug_furniture() -> void:
 		var layer: int = main._layer_of(def)
 		if main.grid.can_place(def["grid_w"], def["grid_h"], origin, 0, layer):
 			var iid: int = main.grid.place(def_id, def["grid_w"], def["grid_h"], origin, 0, layer)
-			var fs := FurnitureSprite.new()
-			fs.setup(iid, def_id)
-			main.furniture_layer.add_child(fs)
-			fs.refresh(main.grid.get_placement(iid))
-			main.sprites[iid] = fs
+			var node: Node3D = main._make_furniture_node(def_id, main.grid.get_placement(iid))
+			main.furniture_layer.add_child(node)
+			main.sprites[iid] = node
 	main._rebuild_astar()
 
 
