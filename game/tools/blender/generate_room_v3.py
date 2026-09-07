@@ -99,10 +99,10 @@ def rcyl(name, r, depth, loc, m, rot=(0, 0, 0)):
 def build_room():
     import random
     rng = random.Random(11)
-    rbox("base", (ROOM_W + 0.03, ROOM_H + 0.03, 0.05), (ROOM_W / 2, ROOM_H / 2, -0.028), flat(PAL["wood_d"], 0.85), bevel=0.015)
+    rbox("base", (ROOM_W + 0.03, ROOM_H + 0.03, 0.05), (ROOM_W / 2, ROOM_H / 2, -0.0252), flat(PAL["wood_d"], 0.85), bevel=0.015)
     # 청크 플랭크: 폭 0.5m(2셀), 두께 0.045, 큰 색 변주, 명확한 이음
     pw = 0.5
-    for row in range(int(ROOM_H / pw)):
+    for row in range(math.ceil(ROOM_H / pw) + 1):
         y0 = row * pw
         x = -(row % 2) * 0.9
         while x < ROOM_W:
@@ -110,7 +110,7 @@ def build_room():
             if x1 - x0 > 0.1:
                 v = rng.uniform(-0.06, 0.06)
                 c = (min(1, PAL["wood"][0] + v), min(1, PAL["wood"][1] + v * 0.8), min(1, PAL["wood"][2] + v * 0.6))
-                rbox("plank_%d_%d" % (row, int(x0 * 10)), (x1 - x0 - 0.012, pw - 0.014, 0.045),
+                rbox("plank_%d_%d" % (row, int(x0 * 10)), (x1 - x0 - 0.004, pw - 0.005, 0.045),
                      ((x0 + x1) / 2, y0 + pw / 2, 0.024), wood(c), bevel=0.010)
             x += 1.35
     # 벽 2면 (피치) + 청크 몰딩
@@ -213,9 +213,9 @@ def setup_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
-    scene.cycles.samples = 128
-    scene.cycles.use_denoising = True
-    scene.render.film_transparent = True
+    scene.cycles.samples = 256
+    scene.cycles.use_denoising = False
+    scene.render.film_transparent = False
     scene.render.resolution_x = RES
     scene.render.resolution_y = RES
     scene.render.image_settings.file_format = "PNG"
