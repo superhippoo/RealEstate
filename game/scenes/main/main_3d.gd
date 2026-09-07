@@ -6,17 +6,17 @@ const ROOM_W := 16
 const ROOM_H := 12
 const CELL := 0.25
 
-# 컨셉 팔레트
-const C_WOOD := Color(0.82, 0.54, 0.31)
-const C_WOOD_L := Color(0.85, 0.61, 0.38)
-const C_WOOD_D := Color(0.61, 0.38, 0.215)
-const C_WALL := Color(1.0, 0.82, 0.70)
-const C_WALL2 := Color(0.97, 0.79, 0.68)
-const C_TRIM := Color(0.93, 0.72, 0.62)
-const C_SAGE := Color(0.56, 0.66, 0.42)
-const C_CREAM := Color(0.97, 0.90, 0.78)
-const C_PLANT := Color(0.18, 0.42, 0.24)
-const C_TERRA := Color(0.86, 0.47, 0.34)
+# 컨셉 팔레트 (채도 상향 +20%)
+const C_WOOD := Color(0.88, 0.52, 0.24)
+const C_WOOD_L := Color(0.92, 0.62, 0.30)
+const C_WOOD_D := Color(0.58, 0.33, 0.15)
+const C_WALL := Color(1.0, 0.78, 0.62)
+const C_WALL2 := Color(0.97, 0.75, 0.60)
+const C_TRIM := Color(0.93, 0.68, 0.55)
+const C_SAGE := Color(0.50, 0.70, 0.34)
+const C_CREAM := Color(1.0, 0.92, 0.75)
+const C_PLANT := Color(0.12, 0.48, 0.20)
+const C_TERRA := Color(0.92, 0.40, 0.25)
 
 var grid: GridModel
 var db: FurnitureDB
@@ -83,26 +83,49 @@ func _box(parent: Node3D, pos: Vector3, size: Vector3, color: Color, rough := 0.
 
 
 func _build_world() -> void:
-	# 조명/환경
+	# 조명/환경 (색감 강화: 글로우+톤매핑+채도)
 	var world := WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.28, 0.24, 0.22)
+	env.background_color = Color(0.30, 0.24, 0.20)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(1.0, 0.93, 0.87)
-	env.ambient_light_energy = 0.95
+	env.ambient_light_color = Color(1.0, 0.90, 0.80)
+	env.ambient_light_energy = 1.1
+	# 글로우 (램프/창문/펜던트 발광이 퍼져나가는 효과)
+	env.glow_enabled = true
+	env.glow_intensity = 0.6
+	env.glow_strength = 1.1
+	env.glow_bloom = 0.1
+	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
+	env.glow_hdr_threshold = 1.0
+	# 색보정 (채도 상향 + 따뜻한 톤)
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_exposure = 1.1
+	env.tonemap_white = 6.0
+	env.adjustment_enabled = true
+	env.adjustment_saturation = 1.25
+	env.adjustment_contrast = 1.05
 	world.environment = env
 	add_child(world)
 
 	var sun := DirectionalLight3D.new()
-	sun.light_color = Color(1.0, 0.95, 0.88)
-	sun.light_energy = 1.35
+	sun.light_color = Color(1.0, 0.92, 0.82)
+	sun.light_energy = 1.5
 	sun.shadow_enabled = true
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
 	sun.directional_shadow_blend_splits = true
 	sun.directional_shadow_max_distance = 12.0
+	sun.shadow_blur = 2.0
 	sun.rotation_degrees = Vector3(-55, -35, 0)
 	add_child(sun)
+
+	# 보조 필 라이트 (창문 방향에서 들어오는 시원한 산란광)
+	var fill := DirectionalLight3D.new()
+	fill.light_color = Color(0.80, 0.85, 1.0)
+	fill.light_energy = 0.4
+	fill.shadow_enabled = false
+	fill.rotation_degrees = Vector3(-40, 120, 0)
+	add_child(fill)
 
 	# 카메라: 직교 아이소(요 45도, 피치 30도)
 	var cam := Camera3D.new()
@@ -178,6 +201,27 @@ func _build_world() -> void:
 		glow.material_override.emission = Color(1.0, 0.9, 0.7)
 		glow.material_override.emission_energy_multiplier = 1.6
 
+	# 시어 커튼 (창문 양옆)
+	for sz in [-0.62, 0.62]:
+		var cur := _box(win, Vector3(0.08, 1.15, wz + sz), Vector3(0.04, 0.55, 0.14), Color(0.97, 0.94, 0.88), 0.95)
+		cur.material_override.subsurface_scattering_strength = 0.5
+	# 창문 빛 패치 (바닥에 떨어지는 따뜻한 빛)
+	var light_patch := MeshInstance3D.new()
+	var pq := PlaneMesh.new()
+	pq.size = Vector2(0.6, 1.4)
+	light_patch.mesh = pq
+	var lm := StandardMaterial3D.new()
+	lm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	lm.albedo_color = Color(1.0, 0.92, 0.75, 0.12)
+	lm.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	lm.emission_enabled = true
+	lm.emission = Color(1.0, 0.90, 0.70)
+	lm.emission_energy_multiplier = 0.15
+	light_patch.material_override = lm
+	light_patch.rotation_degrees = Vector3(-90, 0, 0)
+	light_patch.position = Vector3(0.35, 0.055, wz)
+	win.add_child(light_patch)
+
 	# 가구 레이어 + 프리뷰 풀
 	furniture_layer = Node3D.new()
 	add_child(furniture_layer)
@@ -225,14 +269,104 @@ func _make_furniture_node(def_id: String, placement: GridModel.Placement) -> Nod
 	if model_id != "" and FileAccess.file_exists("res://assets/models/%s.glb" % model_id):
 		var scene: PackedScene = load("res://assets/models/%s.glb" % model_id)
 		node = scene.instantiate()
+		# CC0 모델 재질을 팔레트로 오버라이드
+		_recolor_glb(node)
+		# 가구별 소품 추가 (표면 위)
+		_add_props_to_glb(node, def_id)
 	else:
 		node = _procedural_furniture(def_id, def)
+	# 접촉 그림자 (가구 밑 어두운 타원)
+	_add_contact_shadow(node, def, placement.rotation)
 	# 위치/회전: footprint 중심
 	var fp := GridModel.footprint_size(def["grid_w"], def["grid_h"], placement.rotation)
 	node.position = Vector3((placement.origin.x + fp.x / 2.0) * CELL, 0,
 			(placement.origin.y + fp.y / 2.0) * CELL)
 	node.rotation_degrees.y = -placement.rotation
 	return node
+
+
+func _recolor_glb(node: Node) -> void:
+	"""glTF 모델의 재질을 프로젝트 팔레트로 교체 (색감 통일)"""
+	if node is MeshInstance3D:
+		var mi := node as MeshInstance3D
+		var mat := mi.material_override
+		if mat == null and mi.mesh and mi.mesh.get_surface_count() > 0:
+			mat = mi.mesh.surface_get_material(0)
+		if mat is StandardMaterial3D:
+			var sm := mat as StandardMaterial3D
+			var c := sm.albedo_color
+			# 재질명 기반 대응은 어려우므로 색 기반 히스토그램 매칭
+			var lum := (c.r + c.g + c.b) / 3.0
+			if lum > 0.8:
+				sm.albedo_color = Color(0.95, 0.90, 0.80)  # 크림/시트
+			elif lum > 0.5:
+				if c.g > c.r:
+					sm.albedo_color = Color(0.50, 0.68, 0.36)  # 세이지
+				else:
+					sm.albedo_color = Color(0.85, 0.58, 0.32)  # 우드 라이트
+			elif lum > 0.25:
+				sm.albedo_color = Color(0.60, 0.38, 0.20)  # 우드 다크
+			else:
+				sm.albedo_color = Color(0.25, 0.22, 0.20)  # 다크
+			sm.roughness = 0.75
+			sm.metallic = 0.0
+	for c in node.get_children():
+		_recolor_glb(c)
+
+
+func _add_props_to_glb(node: Node3D, def_id: String) -> void:
+	"""CC0 가구 위에 소품 추가 (생활감)"""
+	match def_id:
+		"bed_single":
+			# 침대 위: 책 + 베개 옆 작은 쿠션
+			_box(node, Vector3(0.18, 0.62, 0.30), Vector3(0.15, 0.03, 0.11), C_TERRA, 0.9)
+			_box(node, Vector3(-0.20, 0.66, -0.45), Vector3(0.28, 0.10, 0.24), Color(0.95, 0.75, 0.55), 0.95)
+		"sofa_two":
+			# 소파: 던지면 쿠션(테라코타) + 담요(머스터드)
+			_box(node, Vector3(0.15, 0.52, 0.0), Vector3(0.30, 0.10, 0.30), C_TERRA, 0.95)
+			_box(node, Vector3(-0.48, 0.55, 0.0), Vector3(0.10, 0.20, 0.45), Color(0.90, 0.72, 0.35), 0.95)
+		"chair_basic":
+			# 의자 방석 위 작은 쿠션
+			pass
+		"desk_table":
+			# 책상: 컵 + 책 2권
+			var cup := MeshInstance3D.new()
+			var cyl := CylinderMesh.new()
+			cyl.top_radius = 0.032
+			cyl.bottom_radius = 0.028
+			cyl.height = 0.07
+			cup.mesh = cyl
+			cup.material_override = _mat(C_TERRA)
+			cup.position = Vector3(0.25, 0.80, 0.05)
+			node.add_child(cup)
+			_box(node, Vector3(-0.20, 0.78, 0.0), Vector3(0.14, 0.028, 0.10), C_SAGE, 0.9)
+			_box(node, Vector3(-0.18, 0.81, 0.01), Vector3(0.12, 0.025, 0.09), Color(0.80, 0.75, 0.65), 0.9)
+		"plant_monstera":
+			# 화분 옆 작은 화분
+			_box(node, Vector3(0.22, 0.05, 0.12), Vector3(0.08, 0.08, 0.08), C_WOOD_D)
+			_box(node, Vector3(0.22, 0.11, 0.12), Vector3(0.06, 0.06, 0.06), C_PLANT)
+
+
+func _add_contact_shadow(node: Node3D, def: Dictionary, rot: int) -> void:
+	"""가구 밑에 어두운 반투명 타원 (접촉 그림자 효과)"""
+	var fp := GridModel.footprint_size(def["grid_w"], def["grid_h"], rot)
+	var w: float = fp.x * CELL * 0.9
+	var d: float = fp.y * CELL * 0.9
+	var mi := MeshInstance3D.new()
+	var cm := CylinderMesh.new()
+	cm.top_radius = 0.5
+	cm.bottom_radius = 0.5
+	cm.height = 0.008
+	mi.mesh = cm
+	var m := StandardMaterial3D.new()
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_color = Color(0.15, 0.10, 0.05, 0.30)
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.render_priority = -1
+	mi.material_override = m
+	mi.scale = Vector3(w, 1, d)
+	mi.position = Vector3(0, 0.004, 0)
+	node.add_child(mi)
 
 
 func _procedural_furniture(def_id: String, def: Dictionary) -> Node3D:
@@ -256,6 +390,9 @@ func _procedural_furniture(def_id: String, def: Dictionary) -> Node3D:
 			inner.material_override = _mat(C_CREAM, 0.98)
 			inner.position.y = 0.022
 			n.add_child(inner)
+			# 소품: 슬리퍼 2컬레
+			for sx in [-0.09, 0.09]:
+				_box(n, Vector3(sx, 0.04, 0.35), Vector3(0.07, 0.03, 0.14), C_SAGE, 0.95)
 		"tv_43":
 			_box(n, Vector3(0, 0.20, 0), Vector3(1.0, 0.36, 0.5), C_WOOD)
 			_box(n, Vector3(0, 0.70, 0), Vector3(0.86, 0.56, 0.06), Color(0.24, 0.23, 0.22), 0.4)
@@ -263,14 +400,27 @@ func _procedural_furniture(def_id: String, def: Dictionary) -> Node3D:
 			scr.material_override.emission_enabled = true
 			scr.material_override.emission = Color(0.45, 0.6, 0.65)
 			scr.material_override.emission_energy_multiplier = 0.5
-			_box(n, Vector3(-0.36, 0.42, 0.02), Vector3(0.12, 0.10, 0.12), C_TERRA)
+			# 소품: 화분 + 리모컨 + 책
+			_box(n, Vector3(-0.36, 0.42, 0.02), Vector3(0.10, 0.09, 0.10), C_TERRA)
+			_box(n, Vector3(-0.36, 0.49, 0.02), Vector3(0.08, 0.07, 0.08), C_PLANT)
 			_box(n, Vector3(0.15, 0.40, 0.10), Vector3(0.24, 0.05, 0.08), Color(0.25, 0.24, 0.23))
+			_box(n, Vector3(0.32, 0.40, -0.08), Vector3(0.10, 0.03, 0.14), C_SAGE)
 		"side_table":
 			_box(n, Vector3(0, 0.42, 0), Vector3(0.42, 0.04, 0.42), C_WOOD_L)
 			for v in [Vector3(-0.13, 0.21, -0.13), Vector3(0.13, 0.21, -0.13), Vector3(0, 0.21, 0.15)]:
 				_box(n, v, Vector3(0.04, 0.42, 0.04), C_WOOD_D)
-			_box(n, Vector3(0.07, 0.48, 0.03), Vector3(0.08, 0.09, 0.08), C_TERRA)
-			_box(n, Vector3(-0.07, 0.46, -0.03), Vector3(0.16, 0.03, 0.11), C_SAGE)
+			# 소품: 컵 + 책 + 작은 화분
+			var cup := MeshInstance3D.new()
+			var cyl := CylinderMesh.new()
+			cyl.top_radius = 0.035
+			cyl.bottom_radius = 0.03
+			cyl.height = 0.075
+			cup.mesh = cyl
+			cup.material_override = _mat(C_TERRA)
+			cup.position = Vector3(0.06, 0.48, 0.03)
+			n.add_child(cup)
+			_box(n, Vector3(-0.07, 0.46, -0.03), Vector3(0.14, 0.028, 0.10), C_SAGE)
+			_box(n, Vector3(-0.12, 0.47, 0.10), Vector3(0.07, 0.06, 0.07), C_WOOD_D)
 		"picture_frame":
 			_box(n, Vector3(0, 1.18, 0), Vector3(0.05, 0.56, 0.46), C_WOOD_D)
 			_box(n, Vector3(0.035, 1.18, 0), Vector3(0.02, 0.48, 0.38), Color(0.965, 0.95, 0.91))
