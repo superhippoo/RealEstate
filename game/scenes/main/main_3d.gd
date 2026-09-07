@@ -298,6 +298,8 @@ func _build_world() -> void:
 	agent.setup(self)
 
 
+
+
 func cell_walkable(cell: Vector2i) -> bool:
 	if cell.x < 0 or cell.y < 0 or cell.x >= ROOM_W or cell.y >= ROOM_H:
 		return false
@@ -336,30 +338,38 @@ func _make_furniture_node(def_id: String, placement: GridModel.Placement) -> Nod
 
 
 func _recolor_glb(node: Node) -> void:
-	"""glTF 모델의 재질을 프로젝트 팔레트로 교체 (색감 통일)"""
+	"""glTF 모델의 모든 메쉬에 toon shader 재질 교체 (일러스트 통일)"""
 	if node is MeshInstance3D:
 		var mi := node as MeshInstance3D
-		var mat := mi.material_override
-		if mat == null and mi.mesh and mi.mesh.get_surface_count() > 0:
-			mat = mi.mesh.surface_get_material(0)
-		if mat is StandardMaterial3D:
-			var sm := mat as StandardMaterial3D
-			var c: Color = sm.albedo_color
-			# 재질명 기반 대응은 어려우므로 색 기반 히스토그램 매칭
-			var lum := (c.r + c.g + c.b) / 3.0
-			if lum > 0.8:
-				sm.albedo_color = Color(0.95, 0.90, 0.80)  # 크림/시트
-			elif lum > 0.5:
-				if c.g > c.r:
-					sm.albedo_color = Color(0.50, 0.68, 0.36)  # 세이지
-				else:
-					sm.albedo_color = Color(0.85, 0.58, 0.32)  # 우드 라이트
-			elif lum > 0.25:
-				sm.albedo_color = Color(0.60, 0.38, 0.20)  # 우드 다크
+		# 기존 색 추출 (가능하면)
+		var base_color := Color(0.85, 0.62, 0.35)  # 기본 웜 우드
+		if mi.material_override is StandardMaterial3D:
+			base_color = (mi.material_override as StandardMaterial3D).albedo_color
+		elif mi.mesh and mi.mesh.get_surface_count() > 0:
+			var sm := mi.mesh.surface_get_material(0)
+			if sm is StandardMaterial3D:
+				base_color = (sm as StandardMaterial3D).albedo_color
+
+		# 색 팔레트 스냅 (밝기 기반)
+		var lum := (base_color.r + base_color.g + base_color.b) / 3.0
+		if lum > 0.80:
+			base_color = Color(0.96, 0.91, 0.78)  # 크림/시트
+		elif lum > 0.55:
+			if base_color.g > base_color.r:
+				base_color = Color(0.50, 0.68, 0.36)  # 세이지
+			elif base_color.r > 0.75:
+				base_color = Color(0.90, 0.48, 0.30)  # 테라코타
 			else:
-				sm.albedo_color = Color(0.25, 0.22, 0.20)  # 다크
-			sm.roughness = 0.75
-			sm.metallic = 0.0
+				base_color = Color(0.88, 0.62, 0.32)  # 우드 라이트
+		elif lum > 0.30:
+			base_color = Color(0.60, 0.38, 0.20)  # 우드 다크
+		else:
+			base_color = Color(0.30, 0.26, 0.22)  # 다크
+		if base_color.g > base_color.r + 0.15:
+			base_color = Color(0.15, 0.48, 0.22)  # 식물 그린
+
+		# toon shader로 교체
+		mi.material_override = _mat(base_color, 0.75)
 	for c in node.get_children():
 		_recolor_glb(c)
 
