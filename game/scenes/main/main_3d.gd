@@ -184,22 +184,42 @@ func _build_world() -> void:
 	_box(win, Vector3(0.06, 1.15, wz + 0.5), Vector3(0.07, 0.62, 0.06), C_WOOD_L)
 	_box(win, Vector3(0.06, 1.15, wz), Vector3(0.06, 0.62, 0.05), C_WOOD_L)
 
-	# 주방 (-Z 벽): 카운터/상부장/후드/냉장고
+	# 주방 (-Z 벽): 카운터/상부장/후드/냉장고 + 소품/타일/손잡이
 	var kit := Node3D.new()
 	add_child(kit)
 	_box(kit, Vector3(1.6, 0.38, 0.33), Vector3(3.1, 0.68, 0.6), C_WOOD)
 	_box(kit, Vector3(1.6, 0.75, 0.33), Vector3(3.15, 0.06, 0.66), C_CREAM, 0.5)
+	# 백스플래시 타일 (세이지)
+	_box(kit, Vector3(1.6, 1.05, 0.05), Vector3(3.15, 0.48, 0.02), Color(0.48, 0.68, 0.36), 0.3)
 	_box(kit, Vector3(0.7, 1.55, 0.19), Vector3(1.3, 0.56, 0.34), C_CREAM)
 	_box(kit, Vector3(2.05, 1.5, 0.2), Vector3(0.52, 0.4, 0.36), C_CREAM)
 	_box(kit, Vector3(3.6, 0.85, 0.35), Vector3(0.62, 1.7, 0.68), C_CREAM)
 	_box(kit, Vector3(3.6, 1.25, 0.70), Vector3(0.04, 0.5, 0.05), Color(0.75, 0.72, 0.68), 0.4)
 	_box(kit, Vector3(3.6, 0.55, 0.70), Vector3(0.04, 0.36, 0.05), Color(0.75, 0.72, 0.68), 0.4)
+	# 캐비닛 슬릿 손잡이 4개
+	for i in range(4):
+		_box(kit, Vector3(0.35 + i * 0.75, 0.62, 0.638), Vector3(0.48, 0.02, 0.015), C_WOOD_D)
+	# 싱크 + 수도꼭지
+	var sink_m := MeshInstance3D.new()
+	var sink_mesh := CylinderMesh.new()
+	sink_mesh.top_radius = 0.13; sink_mesh.bottom_radius = 0.11; sink_mesh.height = 0.03
+	sink_m.mesh = sink_mesh
+	sink_m.material_override = _mat(Color(0.75, 0.77, 0.80), 0.3)
+	sink_m.position = Vector3(0.55, 0.775, 0.33)
+	kit.add_child(sink_m)
+	_box(kit, Vector3(0.55, 0.88, 0.15), Vector3(0.015, 0.16, 0.015), Color(0.72, 0.74, 0.76), 0.3)
+	_box(kit, Vector3(0.55, 0.95, 0.22), Vector3(0.015, 0.015, 0.14), Color(0.72, 0.74, 0.76), 0.3)
+	# 소품: 도마 + 커피머신 + 머그 + 그릇
+	_box(kit, Vector3(1.5, 0.80, 0.30), Vector3(0.30, 0.018, 0.20), Color(0.82, 0.72, 0.55), 0.6)
+	_box(kit, Vector3(2.30, 0.88, 0.30), Vector3(0.14, 0.20, 0.13), Color(0.25, 0.23, 0.21), 0.4)
+	_box(kit, Vector3(2.10, 0.81, 0.32), Vector3(0.06, 0.07, 0.06), C_TERRA)
+	_box(kit, Vector3(1.15, 0.80, 0.38), Vector3(0.12, 0.012, 0.12), Color(0.96, 0.94, 0.90), 0.3)
 	# 펜던트 2
 	for px in [1.05, 1.72]:
 		var glow := _box(kit, Vector3(px, 1.5, 0.33), Vector3(0.13, 0.1, 0.13), Color(1, 0.95, 0.85))
 		glow.material_override.emission_enabled = true
 		glow.material_override.emission = Color(1.0, 0.9, 0.7)
-		glow.material_override.emission_energy_multiplier = 1.6
+		glow.material_override.emission_energy_multiplier = 1.8
 
 	# 시어 커튼 (창문 양옆)
 	for sz in [-0.62, 0.62]:
@@ -360,7 +380,7 @@ func _add_contact_shadow(node: Node3D, def: Dictionary, rot: int) -> void:
 	mi.mesh = cm
 	var m := StandardMaterial3D.new()
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.albedo_color = Color(0.15, 0.10, 0.05, 0.30)
+	m.albedo_color = Color(0.12, 0.08, 0.04, 0.45)
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.render_priority = -1
 	mi.material_override = m
@@ -374,25 +394,33 @@ func _procedural_furniture(def_id: String, def: Dictionary) -> Node3D:
 	var n := Node3D.new()
 	match def_id:
 		"rug_oval":
+			# 보더 (진한 세이지)
 			var mi := MeshInstance3D.new()
 			var cm := CylinderMesh.new()
-			cm.top_radius = 0.5
-			cm.bottom_radius = 0.5
-			cm.height = 0.035
+			cm.top_radius = 0.5; cm.bottom_radius = 0.5; cm.height = 0.04
 			mi.mesh = cm
 			mi.scale = Vector3(1.5, 1, 1.0)
-			mi.material_override = _mat(C_SAGE, 0.98)
-			mi.position.y = 0.017
+			mi.material_override = _mat(Color(0.42, 0.62, 0.28), 0.98)
+			mi.position.y = 0.020
 			n.add_child(mi)
+			# 중심 (밝은 크림) — 명확한 색 대비
 			var inner := mi.duplicate()
-			(inner.mesh as CylinderMesh).top_radius = 0.4
-			(inner.mesh as CylinderMesh).bottom_radius = 0.4
-			inner.material_override = _mat(C_CREAM, 0.98)
-			inner.position.y = 0.022
+			(inner.mesh as CylinderMesh).top_radius = 0.40
+			(inner.mesh as CylinderMesh).bottom_radius = 0.40
+			inner.material_override = _mat(Color(0.98, 0.93, 0.80), 0.98)
+			inner.position.y = 0.025
 			n.add_child(inner)
+			# 내부 링 (미세 패턴 대체)
+			var ring := mi.duplicate()
+			(ring.mesh as CylinderMesh).top_radius = 0.45
+			(ring.mesh as CylinderMesh).bottom_radius = 0.45
+			ring.material_override = _mat(Color(0.85, 0.78, 0.62), 0.98)
+			ring.position.y = 0.024
+			ring.scale = Vector3(1.5, 1, 0.3)
+			n.add_child(ring)
 			# 소품: 슬리퍼 2컬레
 			for sx in [-0.09, 0.09]:
-				_box(n, Vector3(sx, 0.04, 0.35), Vector3(0.07, 0.03, 0.14), C_SAGE, 0.95)
+				_box(n, Vector3(sx, 0.045, 0.35), Vector3(0.07, 0.03, 0.14), C_TERRA, 0.95)
 		"tv_43":
 			_box(n, Vector3(0, 0.20, 0), Vector3(1.0, 0.36, 0.5), C_WOOD)
 			_box(n, Vector3(0, 0.70, 0), Vector3(0.86, 0.56, 0.06), Color(0.24, 0.23, 0.22), 0.4)
