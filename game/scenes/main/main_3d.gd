@@ -63,11 +63,33 @@ func _ready() -> void:
 
 
 # ================================================================ 월드
-func _mat(color: Color, rough := 0.9) -> StandardMaterial3D:
+var _cozy_shader: Shader
+
+func _get_cozy_shader() -> Shader:
+	if _cozy_shader == null:
+		_cozy_shader = load("res://shaders/cozy_toon.gdshader")
+	return _cozy_shader
+
+
+func _mat(color: Color, rough := 0.9) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = _get_cozy_shader()
+	m.set_shader_parameter("albedo", Color(color.r, color.g, color.b, 1.0))
+	m.set_shader_parameter("roughness", rough)
+	m.set_shader_parameter("rim_strength", 0.5)
+	m.set_shader_parameter("warmth", 0.12)
+	m.set_shader_parameter("saturation_boost", 1.35)
+	m.set_shader_parameter("brightness_target", 0.60)
+	return m
+
+
+func _emat(color: Color, emission_color: Color, energy: float) -> StandardMaterial3D:
+	"""발광 재질 (램프/창문/펜던트) — StandardMaterial3D 유지"""
 	var m := StandardMaterial3D.new()
 	m.albedo_color = color
-	m.roughness = rough
-	m.metallic = 0.0
+	m.emission_enabled = true
+	m.emission = emission_color
+	m.emission_energy_multiplier = energy
 	return m
 
 
@@ -83,46 +105,48 @@ func _box(parent: Node3D, pos: Vector3, size: Vector3, color: Color, rough := 0.
 
 
 func _build_world() -> void:
-	# 조명/환경 (색감 강화: 글로우+톤매핑+채도)
+	# 조명/환경 (저녁 램프 아래 아늑한 방 감 — 레퍼런스 정량 매칭)
 	var world := WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.30, 0.24, 0.20)
+	env.background_color = Color(0.08, 0.06, 0.05)  # 어두운 배경 (방이 돋보이게)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(1.0, 0.90, 0.80)
-	env.ambient_light_energy = 1.1
-	# 글로우 (램프/창문/펜던트 발광이 퍼져나가는 효과)
+	env.ambient_light_color = Color(1.0, 0.85, 0.72)  # 따뜻한 앰비언트
+	env.ambient_light_energy = 0.18  # 낮게 → 그림자 대비 강화
+	# 글로우 (램프/창문 발광이 크게 퍼짐 — 아늑함 핵심)
 	env.glow_enabled = true
-	env.glow_intensity = 0.6
-	env.glow_strength = 1.1
-	env.glow_bloom = 0.1
+	env.glow_intensity = 1.2
+	env.glow_strength = 1.3
+	env.glow_bloom = 0.15
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_SOFTLIGHT
-	env.glow_hdr_threshold = 1.0
-	# 색보정 (채도 상향 + 따뜻한 톤)
-	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	env.tonemap_exposure = 1.1
-	env.tonemap_white = 6.0
+	env.glow_hdr_threshold = 0.8
+	# 색보정 (레퍼런스 채도 0.42 매칭 + 대비)
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.tonemap_exposure = 0.45  # 어둡게 → 레퍼런스 평균 144 매칭
+	env.tonemap_white = 4.0
 	env.adjustment_enabled = true
+	env.adjustment_saturation = 1.65  # 0.26→0.42 목표
+	env.adjustment_contrast = 1.15
 	env.adjustment_saturation = 1.25
 	env.adjustment_contrast = 1.05
 	world.environment = env
 	add_child(world)
 
 	var sun := DirectionalLight3D.new()
-	sun.light_color = Color(1.0, 0.92, 0.82)
-	sun.light_energy = 1.5
+	sun.light_color = Color(1.0, 0.88, 0.75)  # 따뜻한 저녁 햇살
+	sun.light_energy = 2.5  # 강하게 → 대비 (밝은 곳/그림자 차이)
 	sun.shadow_enabled = true
 	sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
 	sun.directional_shadow_blend_splits = true
 	sun.directional_shadow_max_distance = 12.0
-	sun.shadow_blur = 2.0
+	sun.shadow_blur = 3.0
 	sun.rotation_degrees = Vector3(-55, -35, 0)
 	add_child(sun)
 
-	# 보조 필 라이트 (창문 방향에서 들어오는 시원한 산란광)
+	# 보조 필 (시원한 산란광 — 그림자가 완전 검정이 되지 않게)
 	var fill := DirectionalLight3D.new()
-	fill.light_color = Color(0.80, 0.85, 1.0)
-	fill.light_energy = 0.4
+	fill.light_color = Color(0.60, 0.65, 0.85)
+	fill.light_energy = 0.55
 	fill.shadow_enabled = false
 	fill.rotation_degrees = Vector3(-40, 120, 0)
 	add_child(fill)
@@ -174,10 +198,13 @@ func _build_world() -> void:
 	var wy := 0.9
 	var wz := 1.5
 	_box(win, Vector3(0.06, 1.15, wz), Vector3(0.06, 0.62, 1.0), C_WOOD_L)
-	var pane := _box(win, Vector3(0.03, 1.15, wz), Vector3(0.02, 0.56, 0.94), Color(1, 0.96, 0.9))
-	pane.material_override.emission_enabled = true
-	pane.material_override.emission = Color(1.0, 0.94, 0.82)
-	pane.material_override.emission_energy_multiplier = 1.4
+	var pane := MeshInstance3D.new()
+	var pq_mesh := BoxMesh.new()
+	pq_mesh.size = Vector3(0.02, 0.56, 0.94)
+	pane.mesh = pq_mesh
+	pane.material_override = _emat(Color(1, 0.96, 0.9), Color(1.0, 0.94, 0.82), 1.4)
+	pane.position = Vector3(0.03, 1.15, wz)
+	win.add_child(pane)
 	_box(win, Vector3(0.06, 0.86, wz), Vector3(0.07, 0.06, 1.06), C_WOOD_L)
 	_box(win, Vector3(0.06, 1.45, wz), Vector3(0.07, 0.06, 1.06), C_WOOD_L)
 	_box(win, Vector3(0.06, 1.15, wz - 0.5), Vector3(0.07, 0.62, 0.06), C_WOOD_L)
@@ -216,15 +243,17 @@ func _build_world() -> void:
 	_box(kit, Vector3(1.15, 0.80, 0.38), Vector3(0.12, 0.012, 0.12), Color(0.96, 0.94, 0.90), 0.3)
 	# 펜던트 2
 	for px in [1.05, 1.72]:
-		var glow := _box(kit, Vector3(px, 1.5, 0.33), Vector3(0.13, 0.1, 0.13), Color(1, 0.95, 0.85))
-		glow.material_override.emission_enabled = true
-		glow.material_override.emission = Color(1.0, 0.9, 0.7)
-		glow.material_override.emission_energy_multiplier = 1.8
+		var glow := MeshInstance3D.new()
+		var gm := BoxMesh.new()
+		gm.size = Vector3(0.13, 0.1, 0.13)
+		glow.mesh = gm
+		glow.material_override = _emat(Color(1, 0.95, 0.85), Color(1.0, 0.9, 0.7), 1.8)
+		glow.position = Vector3(px, 1.5, 0.33)
+		kit.add_child(glow)
 
 	# 시어 커튼 (창문 양옆)
 	for sz in [-0.62, 0.62]:
-		var cur := _box(win, Vector3(0.08, 1.15, wz + sz), Vector3(0.04, 0.55, 0.14), Color(0.97, 0.94, 0.88), 0.95)
-		cur.material_override.subsurface_scattering_strength = 0.5
+		_box(win, Vector3(0.08, 1.15, wz + sz), Vector3(0.04, 0.55, 0.14), Color(0.97, 0.94, 0.88), 0.95)
 	# 창문 빛 패치 (바닥에 떨어지는 따뜻한 빛)
 	var light_patch := MeshInstance3D.new()
 	var pq := PlaneMesh.new()
@@ -240,7 +269,7 @@ func _build_world() -> void:
 	light_patch.material_override = lm
 	light_patch.rotation_degrees = Vector3(-90, 0, 0)
 	light_patch.position = Vector3(0.35, 0.055, wz)
-	win.add_child(light_patch)
+	add_child(light_patch)
 
 	# 가구 레이어 + 프리뷰 풀
 	furniture_layer = Node3D.new()
@@ -255,6 +284,7 @@ func _build_world() -> void:
 		var m := StandardMaterial3D.new()
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		m.albedo_color = Color(0.61, 0.69, 0.38, 0.55)
+		m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		mi.material_override = m
 		mi.visible = false
 		preview_layer.add_child(mi)
@@ -314,7 +344,7 @@ func _recolor_glb(node: Node) -> void:
 			mat = mi.mesh.surface_get_material(0)
 		if mat is StandardMaterial3D:
 			var sm := mat as StandardMaterial3D
-			var c := sm.albedo_color
+			var c: Color = sm.albedo_color
 			# 재질명 기반 대응은 어려우므로 색 기반 히스토그램 매칭
 			var lum := (c.r + c.g + c.b) / 3.0
 			if lum > 0.8:
@@ -380,7 +410,7 @@ func _add_contact_shadow(node: Node3D, def: Dictionary, rot: int) -> void:
 	mi.mesh = cm
 	var m := StandardMaterial3D.new()
 	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	m.albedo_color = Color(0.12, 0.08, 0.04, 0.45)
+	m.albedo_color = Color(0.12, 0.08, 0.04, 0.50)
 	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	m.render_priority = -1
 	mi.material_override = m
@@ -424,10 +454,13 @@ func _procedural_furniture(def_id: String, def: Dictionary) -> Node3D:
 		"tv_43":
 			_box(n, Vector3(0, 0.20, 0), Vector3(1.0, 0.36, 0.5), C_WOOD)
 			_box(n, Vector3(0, 0.70, 0), Vector3(0.86, 0.56, 0.06), Color(0.24, 0.23, 0.22), 0.4)
-			var scr := _box(n, Vector3(0, 0.70, 0.035), Vector3(0.76, 0.48, 0.02), Color(0.5, 0.65, 0.7), 0.1)
-			scr.material_override.emission_enabled = true
-			scr.material_override.emission = Color(0.45, 0.6, 0.65)
-			scr.material_override.emission_energy_multiplier = 0.5
+			var scr := MeshInstance3D.new()
+			var scm := BoxMesh.new()
+			scm.size = Vector3(0.76, 0.48, 0.02)
+			scr.mesh = scm
+			scr.material_override = _emat(Color(0.5, 0.65, 0.7), Color(0.45, 0.6, 0.65), 0.5)
+			scr.position = Vector3(0, 0.70, 0.035)
+			n.add_child(scr)
 			# 소품: 화분 + 리모컨 + 책
 			_box(n, Vector3(-0.36, 0.42, 0.02), Vector3(0.10, 0.09, 0.10), C_TERRA)
 			_box(n, Vector3(-0.36, 0.49, 0.02), Vector3(0.08, 0.07, 0.08), C_PLANT)
