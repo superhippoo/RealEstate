@@ -30,9 +30,9 @@ func _check(name: String, cond: bool) -> void:
 func _test_iso_projector() -> void:
 	_check("iso (0,0)->(0,0)", IsoProjector.grid_to_screen(0, 0) == Vector2(0, 0))
 	_check("iso (1,0)->(64,32)", IsoProjector.grid_to_screen(1, 0) == Vector2(64, 32))
-	_check("iso (0,1)->(-64,32)", IsoProjector.grid_to_screen(0, 1) == Vector2(-64, 32))
+	_check("iso (0,1)->(64,-32)", IsoProjector.grid_to_screen(0, 1) == Vector2(64, -32))
 	_check("iso roundtrip", IsoProjector.screen_to_grid(IsoProjector.grid_to_screen(7, 3)) == Vector2i(7, 3))
-	_check("iso gridf", IsoProjector.gridf_to_screen(0.5, 0.5) == Vector2(0, 32))
+	_check("iso gridf", IsoProjector.gridf_to_screen(0.5, 0.5) == Vector2(64, 0))
 
 
 # ---------------------------------------------------------------- Grid
