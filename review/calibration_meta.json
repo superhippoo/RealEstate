@@ -1,0 +1,104 @@
+{
+  "spec": {
+    "yaw_deg": 45.0,
+    "pitch_deg": 30.0,
+    "ortho_scale": 3.2,
+    "room_ortho_scale": 6.4,
+    "resolution": 1024,
+    "room_resolution": 2048,
+    "samples": 128,
+    "use_denoise": false,
+    "film_transparent": true,
+    "key_size": 7.0,
+    "key_energy": 130,
+    "fill_size": 9.0,
+    "fill_energy": 55,
+    "world_strength": 0.45,
+    "default_roughness": 0.72,
+    "default_specular": 0.25
+  },
+  "ppm_x": 252.98218193185068,
+  "ppm_y": 252.98224369508623,
+  "corners_px": {
+    "c00": [
+      285.7,
+      525.9
+    ],
+    "c04": [
+      512.0,
+      412.7
+    ],
+    "c40": [
+      512.0,
+      639.0
+    ],
+    "c44": [
+      738.3,
+      525.9
+    ]
+  },
+  "grid_size_cells": 4,
+  "cell_m": 0.25,
+  "cubes": {
+    "A": {
+      "grid": [
+        0,
+        0
+      ],
+      "rotation": 0,
+      "anchor_px": [
+        342.3,
+        525.9
+      ],
+      "file": "cal_cube_A.png"
+    },
+    "B": {
+      "grid": [
+        3,
+        0
+      ],
+      "rotation": 0,
+      "anchor_px": [
+        512.0,
+        610.7
+      ],
+      "file": "cal_cube_B.png"
+    },
+    "C": {
+      "grid": [
+        0,
+        3
+      ],
+      "rotation": 0,
+      "anchor_px": [
+        512.0,
+        441.0
+      ],
+      "file": "cal_cube_C.png"
+    },
+    "D": {
+      "grid": [
+        2,
+        2
+      ],
+      "rotation": 0,
+      "anchor_px": [
+        568.6,
+        525.9
+      ],
+      "file": "cal_cube_D.png"
+    },
+    "E": {
+      "grid": [
+        1,
+        1
+      ],
+      "rotation": 90,
+      "anchor_px": [
+        455.4,
+        525.9
+      ],
+      "file": "cal_cube_E.png"
+    }
+  }
+}
