@@ -1,0 +1,450 @@
+{
+  "chair_basic": {
+    "footprint_cells": [
+      2,
+      2
+    ],
+    "real_size_m": [
+      0.5,
+      0.5
+    ],
+    "origin_px_raw": [
+      512.0,
+      512.0
+    ],
+    "rotations": {
+      "0": {
+        "file": "chair_basic_0.png",
+        "anchor_px": [
+          81.0,
+          118.0
+        ],
+        "size_px": [
+          162,
+          256
+        ]
+      },
+      "90": {
+        "file": "chair_basic_90.png",
+        "anchor_px": [
+          81.0,
+          118.0
+        ],
+        "size_px": [
+          162,
+          256
+        ]
+      },
+      "180": {
+        "file": "chair_basic_180.png",
+        "anchor_px": [
+          81.0,
+          157.0
+        ],
+        "size_px": [
+          162,
+          295
+        ]
+      },
+      "270": {
+        "file": "chair_basic_270.png",
+        "anchor_px": [
+          81.0,
+          157.0
+        ],
+        "size_px": [
+          162,
+          295
+        ]
+      }
+    },
+    "origin_px": [
+      512.0,
+      512.0
+    ]
+  },
+  "bed_single": {
+    "footprint_cells": [
+      4,
+      8
+    ],
+    "real_size_m": [
+      1.0,
+      2.0
+    ],
+    "origin_px_raw": [
+      512.0,
+      512.0
+    ],
+    "rotations": {
+      "0": {
+        "file": "bed_single_0.png",
+        "anchor_px": [
+          312.0,
+          164.0
+        ],
+        "size_px": [
+          553,
+          345
+        ]
+      },
+      "90": {
+        "file": "bed_single_90.png",
+        "anchor_px": [
+          241.0,
+          164.0
+        ],
+        "size_px": [
+          553,
+          345
+        ]
+      },
+      "180": {
+        "file": "bed_single_180.png",
+        "anchor_px": [
+          241.0,
+          209.0
+        ],
+        "size_px": [
+          553,
+          390
+        ]
+      },
+      "270": {
+        "file": "bed_single_270.png",
+        "anchor_px": [
+          312.0,
+          209.0
+        ],
+        "size_px": [
+          553,
+          390
+        ]
+      }
+    },
+    "origin_px": [
+      512.0,
+      512.0
+    ]
+  },
+  "sofa_two": {
+    "footprint_cells": [
+      6,
+      3
+    ],
+    "real_size_m": [
+      1.5,
+      0.75
+    ],
+    "origin_px_raw": [
+      512.0,
+      512.0
+    ],
+    "rotations": {
+      "0": {
+        "file": "sofa_two_0.png",
+        "anchor_px": [
+          182.0,
+          209.0
+        ],
+        "size_px": [
+          364,
+          390
+        ]
+      },
+      "90": {
+        "file": "sofa_two_90.png",
+        "anchor_px": [
+          182.0,
+          209.0
+        ],
+        "size_px": [
+          364,
+          390
+        ]
+      },
+      "180": {
+        "file": "sofa_two_180.png",
+        "anchor_px": [
+          182.0,
+          209.0
+        ],
+        "size_px": [
+          364,
+          390
+        ]
+      },
+      "270": {
+        "file": "sofa_two_270.png",
+        "anchor_px": [
+          182.0,
+          209.0
+        ],
+        "size_px": [
+          364,
+          390
+        ]
+      }
+    },
+    "origin_px": [
+      512.0,
+      512.0
+    ]
+  },
+  "plant_monstera": {
+    "footprint_cells": [
+      2,
+      2
+    ],
+    "real_size_m": [
+      0.5,
+      0.5
+    ],
+    "origin_px_raw": [
+      512.0,
+      512.0
+    ],
+    "rotations": {
+      "0": {
+        "file": "plant_monstera_0.png",
+        "anchor_px": [
+          83.0,
+          153.0
+        ],
+        "size_px": [
+          162,
+          273
+        ]
+      },
+      "90": {
+        "file": "plant_monstera_90.png",
+        "anchor_px": [
+          86.0,
+          137.0
+        ],
+        "size_px": [
+          164,
+          257
+        ]
+      },
+      "180": {
+        "file": "plant_monstera_180.png",
+        "anchor_px": [
+          79.0,
+          140.0
+        ],
+        "size_px": [
+          162,
+          260
+        ]
+      },
+      "270": {
+        "file": "plant_monstera_270.png",
+        "anchor_px": [
+          78.0,
+          146.0
+        ],
+        "size_px": [
+          164,
+          266
+        ]
+      }
+    },
+    "origin_px": [
+      512.0,
+      512.0
+    ]
+  },
+  "floor_lamp": {
+    "footprint_cells": [
+      2,
+      2
+    ],
+    "real_size_m": [
+      0.5,
+      0.5
+    ],
+    "origin_px_raw": [
+      512.0,
+      512.0
+    ],
+    "rotations": {
+      "0": {
+        "file": "floor_lamp_0.png",
+        "anchor_px": [
+          49.0,
+          260.0
+        ],
+        "size_px": [
+          98,
+          378
+        ]
+      },
+      "90": {
+        "file": "floor_lamp_90.png",
+        "anchor_px": [
+          49.0,
+          260.0
+        ],
+        "size_px": [
+          98,
+          378
+        ]
+      },
+      "180": {
+        "file": "floor_lamp_180.png",
+        "anchor_px": [
+          49.0,
+          260.0
+        ],
+        "size_px": [
+          98,
+          378
+        ]
+      },
+      "270": {
+        "file": "floor_lamp_270.png",
+        "anchor_px": [
+          49.0,
+          260.0
+        ],
+        "size_px": [
+          98,
+          378
+        ]
+      }
+    },
+    "origin_px": [
+      512.0,
+      512.0
+    ]
+  },
+  "rug_oval": {
+    "footprint_cells": [
+      6,
+      4
+    ],
+    "real_size_m": [
+      1.5,
+      1.0
+    ],
+    "origin_px_raw": [
+      512.0,
+      512.0
+    ],
+    "rotations": {
+      "0": {
+        "file": "rug_oval_0.png",
+        "anchor_px": [
+          204.0,
+          12.0
+        ],
+        "size_px": [
+          408,
+          212
+        ]
+      },
+      "90": {
+        "file": "rug_oval_90.png",
+        "anchor_px": [
+          204.0,
+          12.0
+        ],
+        "size_px": [
+          408,
+          212
+        ]
+      },
+      "180": {
+        "file": "rug_oval_180.png",
+        "anchor_px": [
+          204.0,
+          12.0
+        ],
+        "size_px": [
+          408,
+          212
+        ]
+      },
+      "270": {
+        "file": "rug_oval_270.png",
+        "anchor_px": [
+          204.0,
+          12.0
+        ],
+        "size_px": [
+          408,
+          212
+        ]
+      }
+    },
+    "origin_px": [
+      512.0,
+      512.0
+    ]
+  },
+  "char": {
+    "footprint_cells": [
+      2,
+      2
+    ],
+    "real_size_m": [
+      0.5,
+      0.5
+    ],
+    "origin_px_raw": [
+      512.0,
+      512.0
+    ],
+    "rotations": {
+      "0": {
+        "file": "char_0.png",
+        "anchor_px": [
+          93.0,
+          141.0
+        ],
+        "size_px": [
+          172,
+          245
+        ]
+      },
+      "90": {
+        "file": "char_90.png",
+        "anchor_px": [
+          79.0,
+          141.0
+        ],
+        "size_px": [
+          172,
+          245
+        ]
+      },
+      "180": {
+        "file": "char_180.png",
+        "anchor_px": [
+          79.0,
+          169.0
+        ],
+        "size_px": [
+          172,
+          279
+        ]
+      },
+      "270": {
+        "file": "char_270.png",
+        "anchor_px": [
+          93.0,
+          169.0
+        ],
+        "size_px": [
+          172,
+          279
+        ]
+      }
+    },
+    "origin_px": [
+      512.0,
+      512.0
+    ]
+  }
+}
