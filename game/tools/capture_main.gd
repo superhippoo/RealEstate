@@ -2,7 +2,7 @@ extends Node
 ## 실제 메인 씬을 띄워 시간대별 스크린샷 캡처 (사용자 요청 검증용)
 ## godot --path . res://tools/capture_main.tscn
 
-var main_scene: Node2D
+var main_scene: Node
 var shots := [3.0, 9.0, 16.0]
 var idx := 0
 var elapsed := 0.0

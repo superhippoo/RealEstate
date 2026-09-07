@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://mvp_mini3d"]
+
+[ext_resource type="Script" path="res://tools/mini3d.gd" id="1"]
+
+[node name="Mini3D" type="Node3D"]
+script = ExtResource("1")

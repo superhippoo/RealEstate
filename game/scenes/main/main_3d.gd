@@ -111,8 +111,8 @@ func _build_world() -> void:
 	var center := Vector3(ROOM_W * CELL / 2.0, 0.4, ROOM_H * CELL / 2.0)
 	var dir := Vector3(1, 1.1, 1).normalized()
 	cam.position = center + dir * 10.0
-	cam.look_at(center, Vector3.UP)
 	add_child(cam)
+	cam.look_at(center, Vector3.UP)
 	cam.make_current()
 
 	# 바닥 베이스 + 플랭크
