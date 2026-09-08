@@ -17,7 +17,7 @@
         "file": "chair_basic_0.png",
         "anchor_px": [
           81.0,
-          118.0
+          128.0
         ],
         "size_px": [
           162,
@@ -28,7 +28,7 @@
         "file": "chair_basic_90.png",
         "anchor_px": [
           81.0,
-          118.0
+          128.0
         ],
         "size_px": [
           162,
@@ -39,7 +39,7 @@
         "file": "chair_basic_180.png",
         "anchor_px": [
           81.0,
-          157.0
+          147.5
         ],
         "size_px": [
           162,
@@ -50,7 +50,7 @@
         "file": "chair_basic_270.png",
         "anchor_px": [
           81.0,
-          157.0
+          147.5
         ],
         "size_px": [
           162,
@@ -80,8 +80,8 @@
       "0": {
         "file": "bed_single_0.png",
         "anchor_px": [
-          312.0,
-          164.0
+          276.5,
+          172.5
         ],
         "size_px": [
           553,
@@ -91,8 +91,8 @@
       "90": {
         "file": "bed_single_90.png",
         "anchor_px": [
-          241.0,
-          164.0
+          276.5,
+          172.5
         ],
         "size_px": [
           553,
@@ -102,8 +102,8 @@
       "180": {
         "file": "bed_single_180.png",
         "anchor_px": [
-          241.0,
-          209.0
+          276.5,
+          195.0
         ],
         "size_px": [
           553,
@@ -113,8 +113,8 @@
       "270": {
         "file": "bed_single_270.png",
         "anchor_px": [
-          312.0,
-          209.0
+          276.5,
+          195.0
         ],
         "size_px": [
           553,
@@ -145,7 +145,7 @@
         "file": "sofa_two_0.png",
         "anchor_px": [
           182.0,
-          209.0
+          195.0
         ],
         "size_px": [
           364,
@@ -156,7 +156,7 @@
         "file": "sofa_two_90.png",
         "anchor_px": [
           182.0,
-          209.0
+          195.0
         ],
         "size_px": [
           364,
@@ -167,7 +167,7 @@
         "file": "sofa_two_180.png",
         "anchor_px": [
           182.0,
-          209.0
+          195.0
         ],
         "size_px": [
           364,
@@ -178,7 +178,7 @@
         "file": "sofa_two_270.png",
         "anchor_px": [
           182.0,
-          209.0
+          195.0
         ],
         "size_px": [
           364,
@@ -208,8 +208,8 @@
       "0": {
         "file": "plant_monstera_0.png",
         "anchor_px": [
-          83.0,
-          153.0
+          81.0,
+          136.5
         ],
         "size_px": [
           162,
@@ -219,8 +219,8 @@
       "90": {
         "file": "plant_monstera_90.png",
         "anchor_px": [
-          86.0,
-          137.0
+          82.0,
+          128.5
         ],
         "size_px": [
           164,
@@ -230,8 +230,8 @@
       "180": {
         "file": "plant_monstera_180.png",
         "anchor_px": [
-          79.0,
-          140.0
+          81.0,
+          130.0
         ],
         "size_px": [
           162,
@@ -241,8 +241,8 @@
       "270": {
         "file": "plant_monstera_270.png",
         "anchor_px": [
-          78.0,
-          146.0
+          82.0,
+          133.0
         ],
         "size_px": [
           164,
@@ -273,7 +273,7 @@
         "file": "floor_lamp_0.png",
         "anchor_px": [
           49.0,
-          260.0
+          189.0
         ],
         "size_px": [
           98,
@@ -284,7 +284,7 @@
         "file": "floor_lamp_90.png",
         "anchor_px": [
           49.0,
-          260.0
+          189.0
         ],
         "size_px": [
           98,
@@ -295,7 +295,7 @@
         "file": "floor_lamp_180.png",
         "anchor_px": [
           49.0,
-          260.0
+          189.0
         ],
         "size_px": [
           98,
@@ -306,7 +306,7 @@
         "file": "floor_lamp_270.png",
         "anchor_px": [
           49.0,
-          260.0
+          189.0
         ],
         "size_px": [
           98,
@@ -337,7 +337,7 @@
         "file": "rug_oval_0.png",
         "anchor_px": [
           204.0,
-          12.0
+          106.0
         ],
         "size_px": [
           408,
@@ -348,7 +348,7 @@
         "file": "rug_oval_90.png",
         "anchor_px": [
           204.0,
-          12.0
+          106.0
         ],
         "size_px": [
           408,
@@ -359,7 +359,7 @@
         "file": "rug_oval_180.png",
         "anchor_px": [
           204.0,
-          12.0
+          106.0
         ],
         "size_px": [
           408,
@@ -370,7 +370,7 @@
         "file": "rug_oval_270.png",
         "anchor_px": [
           204.0,
-          12.0
+          106.0
         ],
         "size_px": [
           408,
@@ -400,8 +400,8 @@
       "0": {
         "file": "char_0.png",
         "anchor_px": [
-          93.0,
-          141.0
+          86.0,
+          122.5
         ],
         "size_px": [
           172,
@@ -411,8 +411,8 @@
       "90": {
         "file": "char_90.png",
         "anchor_px": [
-          79.0,
-          141.0
+          86.0,
+          122.5
         ],
         "size_px": [
           172,
@@ -422,8 +422,8 @@
       "180": {
         "file": "char_180.png",
         "anchor_px": [
-          79.0,
-          169.0
+          86.0,
+          139.5
         ],
         "size_px": [
           172,
@@ -433,8 +433,8 @@
       "270": {
         "file": "char_270.png",
         "anchor_px": [
-          93.0,
-          169.0
+          86.0,
+          139.5
         ],
         "size_px": [
           172,

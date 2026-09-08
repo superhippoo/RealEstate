@@ -25,22 +25,22 @@ SPEC = {
     "samples": 128,
     "use_denoise": False,     # alpha 노이즈 방지를 위해 OFF
     "film_transparent": True, # 가구용 (방은 별도)
-    # 조명
+    # 조명 (레퍼런스 정량 매칭: 채도 0.42, R/B 1.68, 그림자75%/하이라이트125%)
     "key_size": 7.0,
-    "key_energy": 130,
-    "key_color": (1.0, 0.93, 0.85),
+    "key_energy": 200,          # 더 강하게 → 하이라이트 상향
+    "key_color": (1.00, 0.88, 0.72),  # 더 따뜻하게 (R/B ↑)
     "key_rot": (58, 0, -38),
     "key_pos": (3.0, -3.2, 4.2),
-    "fill_size": 9.0,
-    "fill_energy": 55,
-    "fill_color": (0.88, 0.90, 1.0),
+    "fill_size": 12.0,          # 더 크게 → 부드러운 그림자
+    "fill_energy": 35,          # 약하게 → 그림자 더 깊게
+    "fill_color": (0.82, 0.86, 1.0),
     "fill_rot": (55, 0, 140),
     "fill_pos": (-3.5, 3.0, 3.0),
-    "world_color": (0.95, 0.90, 0.83),
-    "world_strength": 0.45,
-    # 재질 기본값
-    "default_roughness": 0.72,
-    "default_specular": 0.25,
+    "world_color": (1.00, 0.85, 0.70),   # 따뜻한 앰비언트
+    "world_strength": 0.35,      # 낮게 → 그림자 대비 증가
+    # 재질 기본값 (채도 상향)
+    "default_roughness": 0.68,
+    "default_specular": 0.35,   # 하이라이트 강화
 }
 
 
@@ -113,21 +113,30 @@ def apply_render_settings(scene, transparent=True, resolution=None):
     if resolution:
         scene.render.resolution_x = resolution
         scene.render.resolution_y = resolution
-    scene.view_settings.view_transform = "AgX"
-    scene.view_settings.look = "AgX - Base Contrast"
-    scene.view_settings.exposure = 0.9
+    scene.view_settings.view_transform = "Standard"  # 색 보존 (AgX는 채도 감소)
+    scene.view_settings.look = "None"
+    scene.view_settings.exposure = 1.0
 
 
 def create_material(color, rough=None):
-    """마스터 재질 생성"""
+    """마스터 재질 생성 — 채도 부스트 포함 (레퍼런스 채도 0.42 매칭)"""
     if rough is None:
         rough = SPEC["default_roughness"]
+    # 채도 부스트: 원본 색의 채도를 약 2배로
+    import colorsys
+    r, g, b = color
+    h, s, v = colorsys.rgb_to_hsv(r, g, b)
+    s = min(s * 1.6, 1.0)  # 팔레트 자체가 이미 고채도이므로 1.6배만
+    r, g, b = colorsys.hsv_to_rgb(h, s, v)
+
     m = bpy.data.materials.new("mat")
     m.use_nodes = True
-    b = m.node_tree.nodes.get("Principled BSDF")
-    b.inputs["Base Color"].default_value = (*color, 1.0)
-    b.inputs["Roughness"].default_value = rough
-    b.inputs["Specular IOR Level"].default_value = SPEC["default_specular"]
+    bsdf = m.node_tree.nodes.get("Principled BSDF")
+    bsdf.inputs["Base Color"].default_value = (r, g, b, 1.0)
+    bsdf.inputs["Roughness"].default_value = rough
+    bsdf.inputs["Specular IOR Level"].default_value = SPEC["default_specular"]
+    bsdf.inputs["Sheen Weight"].default_value = 0.15
+    bsdf.inputs["Coat Weight"].default_value = 0.08
     return m
 
 
