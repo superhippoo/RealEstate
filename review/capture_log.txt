@@ -1,10 +1,10 @@
 Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
 OpenGL API 3.3.0 NVIDIA 457.49 - Compatibility - Using Device: NVIDIA - GeForce MX230
 
-saved res://../review/concept2_01_room_empty.png
-saved res://../review/concept2_02_shop.png
-saved res://../review/concept2_03_bed.png
-saved res://../review/concept2_04_half.png
-saved res://../review/concept2_05_all.png
-saved res://../review/concept2_06_reaction.png
+saved res://../review/place_01_room_empty.png
+saved res://../review/place_02_shop.png
+saved res://../review/place_03_placing_bed.png
+saved res://../review/place_04_bed_placed.png
+saved res://../review/place_05_all_placed.png
+saved res://../review/place_06_collision_red.png
 CAPTURE DONE

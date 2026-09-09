@@ -1,17 +1,17 @@
 extends Node
-## 컨셉 플로우 자동 캡처 (GPT 스프라이트 버전)
-## 각 상태를 순회하며 review/concept2_*.png 저장
+## 배치 모드 자동 캡처
+## review/place_*.png 저장
 
 var flow: Control
 var step := 0
 
 const STEPS := [
 	["room_empty", "01_room_empty"],
-	["room+shop", "02_shop"],
-	["room+bed", "03_bed"],
-	["room+half", "04_half"],
-	["room+all", "05_all"],
-	["reaction", "06_reaction"],
+	["shop", "02_shop"],
+	["placing", "03_placing_bed"],
+	["placed_bed", "04_bed_placed"],
+	["placed_all", "05_all_placed"],
+	["collision", "06_collision_red"],
 ]
 
 
@@ -22,6 +22,13 @@ func _ready() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_next()
+
+
+func _cell_screen(gx: int, gy: int) -> Vector2:
+	# FloorProjector는 이미지 px 반환 → 화면 변환은 flow가 가진 bg 변환 사용
+	var img: Vector2 = flow.FloorProjector.cell_center(gx, gy)
+	var tex_w: float = flow.bg.texture.get_width()
+	return flow.bg.position + img * (flow.bg.size.x / tex_w)
 
 
 func _next() -> void:
@@ -35,39 +42,41 @@ func _next() -> void:
 	match st:
 		"room_empty":
 			flow.debug_set("room")
-		"room+shop":
-			flow.debug_set("room")
-			await _frames(2)
+		"shop":
 			flow._open_shop()
-		"room+bed":
+		"placing":
 			flow._close_shop()
 			await _frames(1)
+			flow.econ.cash_balance += 1_000_000
 			flow._try_buy("bed_single")
-			await _frames(2)
+		"placed_bed":
 			flow._close_reaction()
-		"room+half":
-			flow.econ.cash_balance += 5_000_000
-			flow._update_hud()
-			for fid in ["rug_oval", "sofa_two", "plant_monstera", "floor_lamp"]:
-				flow._try_buy(fid)
-				await _frames(2)
+			await _frames(2)
+			flow._try_place_here(_cell_screen(9, 2))  # 침대: 우측 벽쪽 셀
+		"placed_all":
+			flow._close_reaction()
+			await _frames(1)
+			for pairs in [["rug_oval", [4, 5]], ["sofa_two", [1, 6]], ["armchair", [4, 8]],
+					["plant_monstera", [0, 3]], ["floor_lamp", [0, 8]], ["desk_small", [5, 0]],
+					["chair_basic", [7, 1]], ["tv_43", [12, 0]], ["picture_frame", [10, 0]],
+					["wall_shelf", [2, 0]]]:
+				flow.econ.cash_balance += 2_000_000
+				flow._try_buy(pairs[0])
+				await _frames(1)
+				flow._try_place_here(_cell_screen(pairs[1][0], pairs[1][1]))
+				await _frames(1)
 				flow._close_reaction()
 				await _frames(1)
-		"room+all":
-			flow.econ.cash_balance += 5_000_000
-			flow._update_hud()
-			for fid in ["desk_small", "chair_basic", "tv_43", "picture_frame",
-					"wall_shelf", "armchair"]:
-				flow._try_buy(fid)
-				await _frames(2)
-				flow._close_reaction()
-				await _frames(1)
-		"reaction":
-			flow._open_reaction()
-			await _frames(3)
+		"collision":
+			# 점유 셀 위 배치 시도 → 빨간 고스트. (책상 재구매 시뮬레이션)
+			flow.purchased.erase("desk_small")
+			flow.econ.cash_balance += 2_000_000
+			flow._try_buy("desk_small")
+			await _frames(2)
+			flow._ghost_follow(_cell_screen(2, 7))
 	await _frames(8)
 	var img := get_viewport().get_texture().get_image()
-	var out := "res://../review/concept2_%s.png" % fname
+	var out := "res://../review/place_%s.png" % fname
 	img.save_png(out)
 	print("saved ", out)
 	step += 1
