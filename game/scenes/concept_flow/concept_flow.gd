@@ -556,6 +556,7 @@ func _apply_placement_transform(node: TextureRect, p: GridModel.Placement) -> vo
 	node.position = _img_to_screen(Vector2(anchor.x, anchor.y)) - Vector2(w * 0.5, h - 12.0 * sc)
 	if p.layer == GridModel.Layer.WALL:
 		node.position.y -= h * 0.55  # 바닥이 아닌 벽 높이에 걸기
+		node.position.y = maxf(node.position.y, 6.0)  # 화면 상단 잘림 방지
 	node.set_meta("sort_y", anchor.y)
 
 
