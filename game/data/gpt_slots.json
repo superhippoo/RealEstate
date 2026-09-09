@@ -16,8 +16,8 @@
     4
    ],
    "slot": [
-    0.44,
-    0.62
+    0.4,
+    0.68
    ],
    "layer": "floor",
    "width_px": 294,
@@ -46,11 +46,11 @@
     3
    ],
    "slot": [
-    0.2,
-    0.56
+    0.15,
+    0.58
    ],
    "layer": "normal",
-   "width_px": 264,
+   "width_px": 225,
    "sprite": "res://assets/gpt_sprites/f_sofa_two.png"
   },
   "desk_small": {
@@ -62,7 +62,7 @@
    ],
    "slot": [
     0.46,
-    0.4
+    0.42
    ],
    "layer": "normal",
    "width_px": 206,
@@ -91,8 +91,8 @@
     2
    ],
    "slot": [
-    0.83,
-    0.5
+    0.85,
+    0.44
    ],
    "layer": "normal",
    "width_px": 176,
@@ -106,8 +106,8 @@
     2
    ],
    "slot": [
-    0.09,
-    0.5
+    0.12,
+    0.46
    ],
    "layer": "normal",
    "width_px": 117,
@@ -121,11 +121,11 @@
     2
    ],
    "slot": [
-    0.7,
-    0.5
+    0.08,
+    0.66
    ],
    "layer": "normal",
-   "width_px": 117,
+   "width_px": 100,
    "sprite": "res://assets/gpt_sprites/f_floor_lamp.png"
   },
   "picture_frame": {
@@ -136,8 +136,8 @@
     2
    ],
    "slot": [
-    0.42,
-    0.2
+    0.72,
+    0.26
    ],
    "layer": "wall",
    "width_px": 117,
@@ -151,8 +151,8 @@
     1
    ],
    "slot": [
-    0.56,
-    0.13
+    0.6,
+    0.32
    ],
    "layer": "wall",
    "width_px": 147,
@@ -166,8 +166,8 @@
     2
    ],
    "slot": [
-    0.27,
-    0.46
+    0.36,
+    0.68
    ],
    "layer": "normal",
    "width_px": 117,
@@ -177,10 +177,10 @@
  "characters": {
   "c_idle": {
    "slot": [
-    0.13,
-    0.6
+    0.45,
+    0.8
    ],
-   "width_px": 109,
+   "width_px": 79,
    "sprite": "res://assets/gpt_sprites/c_idle.png"
   },
   "c_happy": {

@@ -24,21 +24,21 @@ ROOM_W_PX, ROOM_H_PX = 1346, 1046  # empty 방 bbox 크기
 # id: (name, grid_w, grid_h, price, slot_x, slot_y, layer, shadow)
 # slot = 방 bbox 기준 분수 (앵커: 가구 바닥 중앙). layer: floor(러그) < normal < wall
 SLOTS = {
-    "rug_oval":       ("타원 러그", 6, 4, 350_000, 0.44, 0.62, "floor", False),
+    "rug_oval":       ("타원 러그", 6, 4, 350_000, 0.40, 0.68, "floor", False),
     "bed_single":     ("싱글 침대", 4, 8, 800_000, 0.62, 0.63, "normal", True),
-    "sofa_two":       ("2인 소파", 6, 3, 1_200_000, 0.20, 0.56, "normal", True),
-    "desk_small":     ("책상", 5, 2, 400_000, 0.46, 0.40, "normal", True),
+    "sofa_two":       ("2인 소파", 6, 3, 1_200_000, 0.15, 0.58, "normal", True, 0.85),
+    "desk_small":     ("책상", 5, 2, 400_000, 0.46, 0.42, "normal", True),
     "chair_basic":    ("의자", 2, 2, 150_000, 0.49, 0.47, "normal", True),
-    "tv_43":          ("43인치 TV", 4, 2, 2_900_000, 0.83, 0.50, "normal", True),
-    "plant_monstera": ("몬스테라", 2, 2, 80_000, 0.09, 0.50, "normal", True),
-    "floor_lamp":     ("플로어 램프", 2, 2, 250_000, 0.70, 0.50, "normal", True),
-    "picture_frame":  ("벽 액자", 2, 2, 120_000, 0.42, 0.20, "wall", False),
-    "wall_shelf":     ("벽 선반", 4, 1, 180_000, 0.56, 0.13, "wall", False),
-    "armchair":       ("안락의자", 2, 2, 180_000, 0.27, 0.46, "normal", True),
+    "tv_43":          ("43인치 TV", 4, 2, 2_900_000, 0.85, 0.44, "normal", True),
+    "plant_monstera": ("몬스테라", 2, 2, 80_000, 0.12, 0.46, "normal", True),
+    "floor_lamp":     ("플로어 램프", 2, 2, 250_000, 0.08, 0.66, "normal", True, 0.85),
+    "picture_frame":  ("벽 액자", 2, 2, 120_000, 0.72, 0.26, "wall", False),
+    "wall_shelf":     ("벽 선반", 4, 1, 180_000, 0.60, 0.32, "wall", False),
+    "armchair":       ("안락의자", 2, 2, 180_000, 0.36, 0.68, "normal", True),
 }
 
 # 캐릭터 (구매 아님, 상시 배치)
-CHAR = {"c_idle": (0.13, 0.60)}
+CHAR = {"c_idle": (0.45, 0.80)}
 
 
 def keyout_magenta(src_path):
@@ -81,13 +81,15 @@ os.makedirs(r'D:/works/realestate/game/assets/concept_room', exist_ok=True)
 # 방 배경 복사 (Godot 임포트용)
 Image.open(os.path.join(SRC, 'room_empty.png')).save(r'D:/works/realestate/game/assets/concept_room/room_empty.png')
 
-for fid, (name, gw, gh, price, sx, sy, layer, shadow) in SLOTS.items():
+for fid, slot_def in SLOTS.items():
+    name, gw, gh, price, sx, sy, layer, shadow = slot_def[:8]
+    scl = slot_def[8] if len(slot_def) > 8 else 1.0
     img = keyout_magenta(os.path.join(SRC, f'f_{fid}.png'))
     if shadow:
         img = bake_shadow(img)
     img.save(os.path.join(OUT, f'f_{fid}.png'))
     # 화면 폭: (gw+gh) 대각 성분 × 셀당 px × 등각 보정 0.35
-    width_px = int((gw + gh) * PX_PER_CELL * 0.35)
+    width_px = int((gw + gh) * PX_PER_CELL * 0.35 * scl)
     meta["items"][fid] = {
         "name": name, "price": price, "grid": [gw, gh],
         "slot": [sx, sy], "layer": layer, "width_px": width_px,
@@ -100,7 +102,7 @@ for cid, (sx, sy) in CHAR.items():
     img = bake_shadow(keyout_magenta(os.path.join(SRC, f'{cid}.png')), 0.6)
     img.save(os.path.join(OUT, f'{cid}.png'))
     meta.setdefault("characters", {})[cid] = {
-        "slot": [sx, sy], "width_px": int(PX_PER_CELL * 1.3),
+        "slot": [sx, sy], "width_px": int(PX_PER_CELL * 0.95),
         "sprite": f"res://assets/gpt_sprites/{cid}.png"}
     print(cid, img.size)
 

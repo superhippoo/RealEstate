@@ -60,6 +60,8 @@ func _build_ui() -> void:
 	char_node = TextureRect.new()
 	char_node.texture = load(slots["characters"]["c_idle"]["sprite"])
 	char_node.visible = false
+	char_node.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	char_node.stretch_mode = TextureRect.STRETCH_SCALE
 	char_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(char_node)
 
@@ -71,8 +73,8 @@ func _build_ui() -> void:
 	hud_style.content_margin_left = 22; hud_style.content_margin_right = 22
 	hud_style.content_margin_top = 10; hud_style.content_margin_bottom = 12
 	hud_bg.add_theme_stylebox_override("panel", hud_style)
-	hud_bg.position = Vector2(640 - 200, 14)
-	hud_bg.size = Vector2(400, 110)
+	hud_bg.position = Vector2(640 - 200, 12)
+	hud_bg.size = Vector2(400, 100)
 	hud_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_theme_constant_override("separation", 2)
 	hud_bg.add_child(hud)
@@ -343,6 +345,8 @@ func _place_furniture(fid: String) -> void:
 	else:
 		node = TextureRect.new()
 		node.texture = load(item["sprite"])
+		node.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		node.stretch_mode = TextureRect.STRETCH_SCALE
 		node.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		furniture_layer.add_child(node)
 		placed[fid] = node
@@ -432,11 +436,14 @@ func _open_shop() -> void:
 			if purchased.has(fid):
 				buy.text = "구매됨"
 				buy.disabled = true
+	hud_panel.visible = false  # 패널 뒤 HUD 글자 잘림 방지
 	shop_panel.visible = true
 
 
 func _close_shop() -> void:
 	shop_panel.visible = false
+	if state == "room":
+		hud_panel.visible = true
 
 
 func _try_buy(fid: String, buy_btn: Button = null) -> void:
