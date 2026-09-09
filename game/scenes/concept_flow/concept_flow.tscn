@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://concept_flow_mvp"]
+
+[ext_resource type="Script" path="res://scenes/concept_flow/concept_flow.gd" id="1"]
+
+[node name="ConceptFlow" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1")
