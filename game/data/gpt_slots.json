@@ -1,0 +1,195 @@
+{
+ "px_per_cell": 84.125,
+ "room": {
+  "x": 65,
+  "y": 28,
+  "w": 1346,
+  "h": 1046,
+  "src": "res://assets/concept_room/room_empty.png"
+ },
+ "items": {
+  "rug_oval": {
+   "name": "타원 러그",
+   "price": 350000,
+   "grid": [
+    6,
+    4
+   ],
+   "slot": [
+    0.44,
+    0.62
+   ],
+   "layer": "floor",
+   "width_px": 294,
+   "sprite": "res://assets/gpt_sprites/f_rug_oval.png"
+  },
+  "bed_single": {
+   "name": "싱글 침대",
+   "price": 800000,
+   "grid": [
+    4,
+    8
+   ],
+   "slot": [
+    0.62,
+    0.63
+   ],
+   "layer": "normal",
+   "width_px": 353,
+   "sprite": "res://assets/gpt_sprites/f_bed_single.png"
+  },
+  "sofa_two": {
+   "name": "2인 소파",
+   "price": 1200000,
+   "grid": [
+    6,
+    3
+   ],
+   "slot": [
+    0.2,
+    0.56
+   ],
+   "layer": "normal",
+   "width_px": 264,
+   "sprite": "res://assets/gpt_sprites/f_sofa_two.png"
+  },
+  "desk_small": {
+   "name": "책상",
+   "price": 400000,
+   "grid": [
+    5,
+    2
+   ],
+   "slot": [
+    0.46,
+    0.4
+   ],
+   "layer": "normal",
+   "width_px": 206,
+   "sprite": "res://assets/gpt_sprites/f_desk_small.png"
+  },
+  "chair_basic": {
+   "name": "의자",
+   "price": 150000,
+   "grid": [
+    2,
+    2
+   ],
+   "slot": [
+    0.49,
+    0.47
+   ],
+   "layer": "normal",
+   "width_px": 117,
+   "sprite": "res://assets/gpt_sprites/f_chair_basic.png"
+  },
+  "tv_43": {
+   "name": "43인치 TV",
+   "price": 2900000,
+   "grid": [
+    4,
+    2
+   ],
+   "slot": [
+    0.83,
+    0.5
+   ],
+   "layer": "normal",
+   "width_px": 176,
+   "sprite": "res://assets/gpt_sprites/f_tv_43.png"
+  },
+  "plant_monstera": {
+   "name": "몬스테라",
+   "price": 80000,
+   "grid": [
+    2,
+    2
+   ],
+   "slot": [
+    0.09,
+    0.5
+   ],
+   "layer": "normal",
+   "width_px": 117,
+   "sprite": "res://assets/gpt_sprites/f_plant_monstera.png"
+  },
+  "floor_lamp": {
+   "name": "플로어 램프",
+   "price": 250000,
+   "grid": [
+    2,
+    2
+   ],
+   "slot": [
+    0.7,
+    0.5
+   ],
+   "layer": "normal",
+   "width_px": 117,
+   "sprite": "res://assets/gpt_sprites/f_floor_lamp.png"
+  },
+  "picture_frame": {
+   "name": "벽 액자",
+   "price": 120000,
+   "grid": [
+    2,
+    2
+   ],
+   "slot": [
+    0.42,
+    0.2
+   ],
+   "layer": "wall",
+   "width_px": 117,
+   "sprite": "res://assets/gpt_sprites/f_picture_frame.png"
+  },
+  "wall_shelf": {
+   "name": "벽 선반",
+   "price": 180000,
+   "grid": [
+    4,
+    1
+   ],
+   "slot": [
+    0.56,
+    0.13
+   ],
+   "layer": "wall",
+   "width_px": 147,
+   "sprite": "res://assets/gpt_sprites/f_wall_shelf.png"
+  },
+  "armchair": {
+   "name": "안락의자",
+   "price": 180000,
+   "grid": [
+    2,
+    2
+   ],
+   "slot": [
+    0.27,
+    0.46
+   ],
+   "layer": "normal",
+   "width_px": 117,
+   "sprite": "res://assets/gpt_sprites/f_armchair.png"
+  }
+ },
+ "characters": {
+  "c_idle": {
+   "slot": [
+    0.13,
+    0.6
+   ],
+   "width_px": 109,
+   "sprite": "res://assets/gpt_sprites/c_idle.png"
+  },
+  "c_happy": {
+   "slot": [
+    0.5,
+    0.5
+   ],
+   "width_px": 109,
+   "sprite": "res://assets/gpt_sprites/c_happy.png"
+  }
+ }
+}
