@@ -56,10 +56,11 @@ func _next() -> void:
 		"placed_all":
 			flow._close_reaction()
 			await _frames(1)
-			for pairs in [["rug_oval", [4, 5]], ["sofa_two", [1, 6]], ["armchair", [4, 8]],
-					["plant_monstera", [0, 3]], ["floor_lamp", [0, 8]], ["desk_small", [5, 0]],
-					["chair_basic", [7, 1]], ["tv_43", [12, 0]], ["picture_frame", [10, 0]],
-					["wall_shelf", [2, 0]]]:
+			# 축: gx=뒤→오른쪽, gy=뒤→왼쪽. gy=0행=뒤오른벽, gx=0열=뒤왼벽
+			for pairs in [["rug_oval", [7, 7]], ["desk_small", [2, 2]], ["chair_basic", [2, 5]],
+					["sofa_two", [2, 8]], ["armchair", [9, 10]],
+					["plant_monstera", [15, 4]], ["floor_lamp", [15, 9]], ["tv_43", [15, 1]],
+					["picture_frame", [12, 1]], ["wall_shelf", [1, 2]]]:
 				flow.econ.cash_balance += 2_000_000
 				flow._try_buy(pairs[0])
 				await _frames(1)

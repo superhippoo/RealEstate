@@ -7,10 +7,11 @@ const GRID_W := 16
 const GRID_H := 12
 
 # room_empty.png(1448x1086) 실측 바닥 꼭짓점 (이미지 픽셀)
-const BACK := Vector2(593, 238)
-const RIGHT := Vector2(1357, 621)
-const FRONT := Vector2(720, 1044)
-const LEFT := Vector2(108, 629)
+# 비전 정밀 측정: 벽 junction 다크라인 끝점/외곽 아웃라인 피팅 (좌우 대칭 검증됨)
+const BACK := Vector2(766, 288)
+const RIGHT := Vector2(1381, 640)
+const FRONT := Vector2(721, 1045)
+const LEFT := Vector2(100, 650)
 
 
 ## 그리드 연속 좌표(셀 단위) → 이미지 픽셀. u:[0,16], v:[0,12]
