@@ -881,7 +881,9 @@ func _sort_furniture() -> void:
 	var nodes: Array = []
 	for iid in placed_nodes:
 		nodes.append([placed_nodes[iid].get_meta("sort_y", 0.0), placed_nodes[iid]])
-	nodes.append([agent.position.y, agent])
+	# 가구 '사용 중'에는 항상 최상단(가구 위에 얹혀 보임), 이동 중에는 발 y 기준
+	var ay: float = 1e9 if agent.get("state") == "using" else agent.position.y
+	nodes.append([ay, agent])
 	nodes.sort_custom(func(a, b): return a[0] < b[0])
 	for i in nodes.size():
 		furniture_layer.move_child(nodes[i][1], i)

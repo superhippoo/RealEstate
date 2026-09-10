@@ -227,12 +227,12 @@ func _start_using() -> void:
 	state = "using"
 	sprite.texture = tex_idle
 	sprite.position.y = -sprite.size.y
-	# 누운 포즈(침대): 가구 중앙에 몸이 얹히도록 위치 보정
-	if use_action.get("pose") == "lie" and use_iid >= 0 and flow.grid.placements.has(use_iid):
-		var center: Vector2 = flow.furniture_center_screen(use_iid)
-		# 중심 피벗 회전: 몸통 중심(발점에서 -h/2 위)이 침대 중앙에 오도록
+	# 누운 포즈(침대): 실제 렌더된 가구 스프라이트 rect 중앙에 몸이 얹히도록
+	if use_action.get("pose") == "lie" and use_iid >= 0 and flow.placed_nodes.has(use_iid):
+		var bed_rect: Rect2 = flow.placed_nodes[use_iid].get_rect()
 		var hh: float = sprite.size.y
-		position = center + Vector2(6, hh * 0.5 - 14)
+		# 중심 피벗 회전 → 몸통 중심 = position + (0, -hh/2) 를 침대 중앙에 맞춤
+		position = bed_rect.get_center() + Vector2(8, hh * 0.5 - 12)
 	use_timer = float(use_action["dur"])
 	bubble.text = use_action["label"]
 	bubble_bg.visible = true
