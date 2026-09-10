@@ -1,13 +1,18 @@
 Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
 OpenGL API 3.3.0 NVIDIA 457.49 - Compatibility - Using Device: NVIDIA - GeForce MX230
 
-saved res://../review/mvp_01_title_menu.png
-saved res://../review/mvp_02_desire_panel.png
-saved res://../review/mvp_03_shop.png
-saved res://../review/mvp_04_shortfall_sidejob.png
-saved res://../review/mvp_05_sidejob.png
-saved res://../review/mvp_06_placing.png
-saved res://../review/mvp_07_desire_done.png
-saved res://../review/mvp_08_month_settle.png
-saved res://../review/mvp_09_goal.png
+saved res://../review/mvp2_01_title.png
+saved res://../review/mvp2_02_job_select.png
+saved res://../review/mvp2_03_listing_select.png
+saved res://../review/mvp2_04_room_start.png
+saved res://../review/mvp2_05_placing_bed.png
+saved res://../review/mvp2_06_bed_placed.png
+saved res://../review/mvp2_07_char_walking.png
+saved res://../review/mvp2_08_char_using_bed.png
+saved res://../review/mvp2_09_month_settle.png
+saved res://../review/mvp2_10_sidejob.png
+saved res://../review/mvp2_11_shortfall_tv.png
+saved res://../review/mvp2_12_storage.png
+saved res://../review/mvp2_13_contract_expiry.png
+saved res://../review/mvp2_14_moved_new_room.png
 CAPTURE DONE

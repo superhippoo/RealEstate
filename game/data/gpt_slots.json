@@ -21,7 +21,19 @@
    ],
    "layer": "floor",
    "width_px": 294,
-   "sprite": "res://assets/gpt_sprites/f_rug_oval.png"
+   "sprite": "res://assets/gpt_sprites/f_rug_oval.png",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     4
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "interaction_label": "러그 위에 앉기"
   },
   "bed_single": {
    "name": "싱글 침대",
@@ -36,7 +48,19 @@
    ],
    "layer": "normal",
    "width_px": 353,
-   "sprite": "res://assets/gpt_sprites/f_bed_single.png"
+   "sprite": "res://assets/gpt_sprites/f_bed_single.png",
+   "action": "SLEEP",
+   "interaction_locals": [
+    [
+     -1,
+     2
+    ],
+    [
+     -1,
+     5
+    ]
+   ],
+   "interaction_label": "자기"
   },
   "sofa_two": {
    "name": "2인 소파",
@@ -51,7 +75,19 @@
    ],
    "layer": "normal",
    "width_px": 225,
-   "sprite": "res://assets/gpt_sprites/f_sofa_two.png"
+   "sprite": "res://assets/gpt_sprites/f_sofa_two.png",
+   "action": "REST",
+   "interaction_locals": [
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     3
+    ]
+   ],
+   "interaction_label": "앉기"
   },
   "desk_small": {
    "name": "책상",
@@ -66,7 +102,15 @@
    ],
    "layer": "normal",
    "width_px": 206,
-   "sprite": "res://assets/gpt_sprites/f_desk_small.png"
+   "sprite": "res://assets/gpt_sprites/f_desk_small.png",
+   "action": "STUDY",
+   "interaction_locals": [
+    [
+     2,
+     2
+    ]
+   ],
+   "interaction_label": "책상에 앉기"
   },
   "chair_basic": {
    "name": "의자",
@@ -81,7 +125,19 @@
    ],
    "layer": "normal",
    "width_px": 117,
-   "sprite": "res://assets/gpt_sprites/f_chair_basic.png"
+   "sprite": "res://assets/gpt_sprites/f_chair_basic.png",
+   "action": "SIT",
+   "interaction_locals": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "interaction_label": "앉기"
   },
   "tv_43": {
    "name": "43인치 TV",
@@ -96,7 +152,27 @@
    ],
    "layer": "normal",
    "width_px": 176,
-   "sprite": "res://assets/gpt_sprites/f_tv_43.png"
+   "sprite": "res://assets/gpt_sprites/f_tv_43.png",
+   "action": "WATCH_TV",
+   "interaction_locals": [
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     4
+    ]
+   ],
+   "interaction_label": "TV 보기"
   },
   "plant_monstera": {
    "name": "몬스테라",
@@ -111,7 +187,19 @@
    ],
    "layer": "normal",
    "width_px": 117,
-   "sprite": "res://assets/gpt_sprites/f_plant_monstera.png"
+   "sprite": "res://assets/gpt_sprites/f_plant_monstera.png",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "interaction_label": "물 주기"
   },
   "floor_lamp": {
    "name": "플로어 램프",
@@ -126,7 +214,19 @@
    ],
    "layer": "normal",
    "width_px": 100,
-   "sprite": "res://assets/gpt_sprites/f_floor_lamp.png"
+   "sprite": "res://assets/gpt_sprites/f_floor_lamp.png",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "interaction_label": "불 켜기"
   },
   "picture_frame": {
    "name": "벽 액자",
@@ -141,7 +241,19 @@
    ],
    "layer": "wall",
    "width_px": 117,
-   "sprite": "res://assets/gpt_sprites/f_picture_frame.png"
+   "sprite": "res://assets/gpt_sprites/f_picture_frame.png",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "interaction_label": "그림 감상"
   },
   "wall_shelf": {
    "name": "벽 선반",
@@ -156,7 +268,27 @@
    ],
    "layer": "wall",
    "width_px": 147,
-   "sprite": "res://assets/gpt_sprites/f_wall_shelf.png"
+   "sprite": "res://assets/gpt_sprites/f_wall_shelf.png",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     3,
+     1
+    ]
+   ],
+   "interaction_label": "선반 정리"
   },
   "armchair": {
    "name": "안락의자",
@@ -171,7 +303,10 @@
    ],
    "layer": "normal",
    "width_px": 117,
-   "sprite": "res://assets/gpt_sprites/f_armchair.png"
+   "sprite": "res://assets/gpt_sprites/f_armchair.png",
+   "action": "",
+   "interaction_locals": [],
+   "interaction_label": ""
   }
  },
  "characters": {

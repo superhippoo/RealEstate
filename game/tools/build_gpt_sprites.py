@@ -74,6 +74,9 @@ def bake_shadow(chair_img, shadow_w_ratio=0.86):
     return canvas
 
 
+import json as _json
+_furn = _json.load(open(r'D:/works/realestate/game/data/mvp/furniture.json', encoding='utf-8'))
+_FURN = {it['id']: it for it in (_furn['furniture'] if isinstance(_furn, dict) and 'furniture' in _furn else _furn)}
 meta = {"px_per_cell": PX_PER_CELL, "room": {"x": 65, "y": 28, "w": ROOM_W_PX, "h": ROOM_H_PX,
          "src": "res://assets/concept_room/room_empty.png"}, "items": {}}
 
@@ -90,10 +93,14 @@ for fid, slot_def in SLOTS.items():
     img.save(os.path.join(OUT, f'f_{fid}.png'))
     # 화면 폭: (gw+gh) 대각 성분 × 셀당 px × 등각 보정 0.35
     width_px = int((gw + gh) * PX_PER_CELL * 0.35 * scl)
+    _src = _FURN.get(fid, {})
     meta["items"][fid] = {
         "name": name, "price": price, "grid": [gw, gh],
         "slot": [sx, sy], "layer": layer, "width_px": width_px,
         "sprite": f"res://assets/gpt_sprites/f_{fid}.png",
+        "action": _src.get("action", ""),
+        "interaction_locals": _src.get("interaction_locals", []),
+        "interaction_label": _src.get("interaction_label", ""),
     }
     print(f'{fid:16s} sprite={img.size}  screen_w={width_px}px')
 

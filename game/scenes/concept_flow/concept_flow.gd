@@ -1,18 +1,15 @@
 extends Control
-## "방 한 칸에서 한남동까지" 진짜 MVP — 기획문서(00/01/04/07/08/10) 기반 완전 루프.
-## 표지(새게임/이어하기) → 지도→필터→매물→전체집 → 방: 욕구→구매→배치→만족→부업/기다림→월정산 → 목표달성
+## "방 한 칸에서 한남동까지" MVP v4 — 실시간 시간/직장·매물 선택/자율생활/계약/보관함.
+## 기획: 00§9 첫 세션, 02§9 첫 매물, 03§3 첫 직장, 04 시간·계약, 07 자율생활, 08 부업, 09 이사·보관함
 
 const GameStateScript := preload("res://scripts/domain/game_state.gd")
 const GridModel := preload("res://scripts/core/grid_model.gd")
 const FloorProjector := preload("res://scripts/core/floor_projector.gd")
 const GridOverlayScript := preload("res://scenes/concept_flow/grid_overlay.gd")
+const CharAgentScript := preload("res://scripts/character/char_agent.gd")
 
 const SCREENS := {
 	"title":  "res://assets/concept/01_cover_house_concept.png",
-	"map":    "res://assets/concept/03_seoul_map_district_selection.png",
-	"filter": "res://assets/concept/04_housing_condition_selection.png",
-	"listing": "res://assets/concept/05_listing_comparison_house_tour.png",
-	"house":  "res://assets/concept/06_whole_house_living_screen.png",
 	"room":   "res://assets/concept_room/room_empty.png",
 }
 
@@ -22,17 +19,19 @@ var grid := GridModel.new(16, 12)
 var bg: TextureRect
 var hud: VBoxContainer
 var hud_panel: PanelContainer
+var month_bar: ProgressBar
 var desire_panel: PanelContainer
 var furniture_layer: Control
 var placed_nodes := {}
 var toast: Label
 var shop_panel: PanelContainer
 var shop_cash_label: Label
-var dim: ColorRect                    # 공용 딤 (팝업 배경)
-var popup: PanelContainer             # 공용 팝업 (부족/부업/정산/목표/반응)
+var storage_panel: PanelContainer
+var dim: ColorRect
+var popup: PanelContainer
 var popup_title: Label
 var popup_body: VBoxContainer
-var char_node: TextureRect
+var agent: Node2D
 
 var placing: String = ""
 var place_origin := Vector2i(6, 5)
@@ -41,9 +40,11 @@ var ghost: TextureRect
 var overlay: Control
 var bottom_bar: HBoxContainer
 var place_bar: HBoxContainer
+var floaties: Control
 
 var slots: Dictionary = {}
 var font: FontFile
+var time_running := false
 
 
 func _ready() -> void:
@@ -55,6 +56,12 @@ func _ready() -> void:
 	anchor_bottom = 1.0
 	_build_ui()
 	show_screen("title")
+
+
+func _process(delta: float) -> void:
+	if time_running and state == "room":
+		if gs.tick(delta):
+			_on_month_boundary()
 
 
 # ================================================================ UI 구성
@@ -69,6 +76,12 @@ func _build_ui() -> void:
 	furniture_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(furniture_layer)
 
+	# 캐릭터 (07§10 자율생활)
+	agent = CharAgentScript.new()
+	furniture_layer.add_child(agent)
+	agent.setup(self)
+	agent.action_finished.connect(_on_action_finished)
+
 	overlay = GridOverlayScript.new()
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.visible = false
@@ -81,31 +94,29 @@ func _build_ui() -> void:
 	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ghost)
 
-	char_node = TextureRect.new()
-	char_node.texture = load(slots["characters"]["c_idle"]["sprite"])
-	char_node.visible = false
-	char_node.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	char_node.stretch_mode = TextureRect.STRETCH_SCALE
-	char_node.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(char_node)
-
-	# 상단 HUD (월/현금/스탯)
+	# HUD
 	hud = VBoxContainer.new()
 	var hud_bg := PanelContainer.new()
-	hud_bg.add_theme_stylebox_override("panel", _pill(Color(0.99, 0.96, 0.90, 0.92)))
-	hud_bg.position = Vector2(640 - 230, 10)
-	hud_bg.size = Vector2(460, 132)
+	hud_bg.add_theme_stylebox_override("panel", _pill(Color(0.99, 0.96, 0.90, 0.93)))
+	hud_bg.position = Vector2(640 - 250, 8)
+	hud_bg.size = Vector2(500, 128)
 	hud_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_theme_constant_override("separation", 2)
 	hud_bg.add_child(hud)
 	add_child(hud_bg)
 	hud_panel = hud_bg
 
+	month_bar = ProgressBar.new()
+	month_bar.custom_minimum_size = Vector2(468, 10)
+	month_bar.show_percentage = false
+	month_bar.modulate = Color(1, 1, 1, 0.9)
+	hud.add_child(month_bar)
+
 	# 욕구 패널 (우측)
 	desire_panel = PanelContainer.new()
 	desire_panel.add_theme_stylebox_override("panel", _pill(Color(0.99, 0.96, 0.90, 0.94)))
-	desire_panel.position = Vector2(1280 - 320, 160)
-	desire_panel.size = Vector2(300, 210)
+	desire_panel.position = Vector2(1280 - 320, 150)
+	desire_panel.size = Vector2(300, 200)
 	desire_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(desire_panel)
 
@@ -114,13 +125,12 @@ func _build_ui() -> void:
 	bottom_bar.name = "BottomBar"
 	bottom_bar.position = Vector2(24, 720 - 92)
 	bottom_bar.size = Vector2(1232, 80)
-	bottom_bar.add_theme_constant_override("separation", 14)
+	bottom_bar.add_theme_constant_override("separation", 12)
 	var bl := Control.new(); bl.custom_minimum_size.x = 24
 	bottom_bar.add_child(bl)
 	bottom_bar.add_child(_mk_button("가구 상점", Callable(self, "_open_shop")))
+	bottom_bar.add_child(_mk_button("보관함", Callable(self, "_open_storage")))
 	bottom_bar.add_child(_mk_button("부업", Callable(self, "_open_sidejob")))
-	bottom_bar.add_child(_mk_button("다음 달", Callable(self, "_next_month")))
-	bottom_bar.add_child(_mk_button("집 전체", Callable(self, "_goto_house")))
 	add_child(bottom_bar)
 
 	# 배치 모드 버튼
@@ -128,12 +138,15 @@ func _build_ui() -> void:
 	place_bar.name = "PlaceBar"
 	place_bar.position = Vector2(24, 720 - 92)
 	place_bar.size = Vector2(1232, 80)
-	place_bar.add_theme_constant_override("separation", 14)
+	place_bar.add_theme_constant_override("separation", 12)
 	var pl := Control.new(); pl.custom_minimum_size.x = 24
 	place_bar.add_child(pl)
 	var rot := _mk_button("회전 ↻", Callable(self, "_rotate_placing"))
 	rot.custom_minimum_size = Vector2(150, 64)
 	place_bar.add_child(rot)
+	var keep := _mk_button("보관함에 넣기", Callable(self, "_store_placing"))
+	keep.custom_minimum_size = Vector2(210, 64)
+	place_bar.add_child(keep)
 	var cancel := _mk_button("취소 (환불)", Callable(self, "_cancel_placing"))
 	cancel.custom_minimum_size = Vector2(210, 64)
 	place_bar.add_child(cancel)
@@ -147,14 +160,19 @@ func _build_ui() -> void:
 	toast.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast.set_anchors_preset(Control.PRESET_CENTER)
 	toast.offset_left = -340; toast.offset_right = 340
-	toast.offset_top = -34; toast.offset_bottom = 34
+	toast.offset_top = -60; toast.offset_bottom = 10
 	add_child(toast)
 
-	_build_shop_panel()
+	# 플로팅 효과 텍스트 레이어
+	floaties = Control.new()
+	floaties.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(floaties)
 
-	# 공용 팝업
+	_build_shop_panel()
+	_build_storage_panel()
+
 	dim = ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.45)
+	dim.color = Color(0, 0, 0, 0.5)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.visible = false
 	dim.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -162,14 +180,14 @@ func _build_ui() -> void:
 
 	popup = PanelContainer.new()
 	popup.add_theme_stylebox_override("panel", _pill(Color(0.99, 0.96, 0.90)))
-	popup.position = Vector2(640 - 330, 200)
-	popup.size = Vector2(660, 360)
+	popup.position = Vector2(640 - 350, 150)
+	popup.size = Vector2(700, 430)
 	popup.visible = false
 	add_child(popup)
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 10)
+	col.add_theme_constant_override("separation", 8)
 	popup.add_child(col)
-	popup_title = _label("제목", 28)
+	popup_title = _label("제목", 26)
 	popup_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(popup_title)
 	popup_body = col
@@ -186,19 +204,33 @@ func _label(text: String, size: int, color := Color(0.35, 0.26, 0.18)) -> Label:
 	return l
 
 
+## 모든 버튼에 눌림 피드백 (스케일 트윈)
 func _mk_button(text: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(160, 64)
+	b.custom_minimum_size = Vector2(150, 60)
 	b.add_theme_font_override("font", font)
-	b.add_theme_font_size_override("font_size", 22)
+	b.add_theme_font_size_override("font_size", 21)
 	b.add_theme_color_override("font_color", Color(0.35, 0.26, 0.18))
 	b.add_theme_stylebox_override("normal", _pill(Color(0.98, 0.94, 0.86)))
 	b.add_theme_stylebox_override("hover", _pill(Color(1.0, 0.97, 0.91)))
-	b.add_theme_stylebox_override("pressed", _pill(Color(0.93, 0.87, 0.76)))
+	b.add_theme_stylebox_override("pressed", _pill(Color(0.88, 0.80, 0.68)))
 	b.add_theme_stylebox_override("focus", _pill(Color(0.98, 0.94, 0.86)))
-	b.pressed.connect(cb)
+	b.pivot_offset = Vector2(75, 30)
+	if cb.is_valid():
+		b.pressed.connect(cb)
+	b.button_down.connect(func(): _btn_anim(b, 0.92, Color(1, 0.95, 0.85)))
+	b.button_up.connect(func(): _btn_anim(b, 1.0, Color(1, 1, 1)))
+	b.mouse_exited.connect(func():
+		if not b.button_pressed:
+			_btn_anim(b, 1.0, Color(1, 1, 1)))
 	return b
+
+
+func _btn_anim(b: Button, sc: float, mod: Color) -> void:
+	var tw := b.create_tween()
+	tw.tween_property(b, "scale", Vector2(sc, sc), 0.07)
+	b.modulate = mod
 
 
 func _pill(bg_color: Color) -> StyleBoxFlat:
@@ -213,7 +245,7 @@ func _pill(bg_color: Color) -> StyleBoxFlat:
 	return s
 
 
-# ================================================================ 상점
+# ================================================================ 상점 / 보관함
 func _build_shop_panel() -> void:
 	shop_panel = PanelContainer.new()
 	shop_panel.visible = false
@@ -229,7 +261,7 @@ func _build_shop_panel() -> void:
 	col.add_theme_constant_override("separation", 8)
 	shop_panel.add_child(col)
 
-	var title := _label("가구 상점", 28)
+	var title := _label("가구 상점", 26)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(title)
 
@@ -246,7 +278,7 @@ func _build_shop_panel() -> void:
 	for fid in slots["items"]:
 		row.add_child(_mk_shop_card(fid, slots["items"][fid]))
 
-	var close := _mk_button("닫기", Callable(self, "_close_popup"))
+	var close := _mk_button("닫기", Callable(self, "_close_all_popups"))
 	col.add_child(close)
 	add_child(shop_panel)
 
@@ -274,23 +306,87 @@ func _mk_shop_card(fid: String, item: Dictionary) -> VBoxContainer:
 	var buy := Button.new()
 	buy.text = "구매"
 	buy.custom_minimum_size = Vector2(92, 40)
+	buy.pivot_offset = Vector2(46, 20)
 	buy.add_theme_font_override("font", font)
 	buy.add_theme_font_size_override("font_size", 17)
 	buy.add_theme_color_override("font_color", Color(1, 1, 0.98))
-	buy.add_theme_color_override("font_disabled_color", Color(0.98, 0.98, 0.96))
+	buy.add_theme_color_override("font_disabled_color", Color(0.55, 0.55, 0.5))
 	buy.add_theme_stylebox_override("normal", _pill(Color(0.72, 0.80, 0.58)))
 	buy.add_theme_stylebox_override("hover", _pill(Color(0.78, 0.86, 0.64)))
-	buy.add_theme_stylebox_override("pressed", _pill(Color(0.64, 0.72, 0.50)))
+	buy.add_theme_stylebox_override("pressed", _pill(Color(0.60, 0.68, 0.47)))
 	buy.add_theme_stylebox_override("focus", _pill(Color(0.72, 0.80, 0.58)))
+	buy.button_down.connect(func(): _btn_anim(buy, 0.92, Color(1, 0.97, 0.9)))
+	buy.button_up.connect(func(): _btn_anim(buy, 1.0, Color(1, 1, 1)))
 	buy.pressed.connect(func(): _try_buy(fid, buy))
 	card.add_child(buy)
 	card.set_meta("buy_btn", buy)
 	return card
 
 
+func _build_storage_panel() -> void:
+	storage_panel = PanelContainer.new()
+	storage_panel.visible = false
+	storage_panel.set_anchors_preset(Control.PRESET_CENTER)
+	var sb := _pill(Color(0.99, 0.96, 0.90))
+	sb.content_margin_left = 24; sb.content_margin_right = 24
+	sb.content_margin_top = 16; sb.content_margin_bottom = 16
+	storage_panel.add_theme_stylebox_override("panel", sb)
+	storage_panel.offset_left = -420; storage_panel.offset_right = 420
+	storage_panel.offset_top = -200; storage_panel.offset_bottom = 200
+	add_child(storage_panel)
+
+
+func _open_storage() -> void:
+	_close_all_popups()
+	for c in storage_panel.get_children():
+		storage_panel.remove_child(c)
+		c.queue_free()
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 8)
+	storage_panel.add_child(col)
+	var title := _label("보관함", 26)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	col.add_child(title)
+	if gs.storage.is_empty():
+		var empty := _label("보관함이 비었어요. 가구를 사서 넣어보세요!", 17)
+		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(empty)
+	else:
+		var info := _label("보관함은 전역 공용이며 무제한이에요 (09§4-5)", 14, Color(0.55, 0.44, 0.30))
+		info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		col.add_child(info)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 10)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		col.add_child(row)
+		for fid in gs.storage:
+			var item: Dictionary = slots["items"][fid]
+			var card := VBoxContainer.new()
+			card.add_theme_constant_override("separation", 4)
+			var img := TextureRect.new()
+			img.texture = load(item["sprite"])
+			img.custom_minimum_size = Vector2(90, 100)
+			img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			card.add_child(img)
+			var nl := _label(item["name"], 14)
+			nl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			card.add_child(nl)
+			var put := _mk_button("배치", Callable())
+			put.pressed.connect(func(): _start_placing_from_storage(fid))
+			put.custom_minimum_size = Vector2(90, 38)
+			card.add_child(put)
+			row.add_child(card)
+	var close := _mk_button("닫기", Callable(self, "_close_all_popups"))
+	col.add_child(close)
+	dim.visible = true
+	storage_panel.visible = true
+
+
 # ================================================================ 화면 전환
 func show_screen(next: String) -> void:
 	state = next
+	time_running = false
 	var tex: Texture2D = load(SCREENS[next])
 	_fit_bg(tex)
 
@@ -300,7 +396,6 @@ func show_screen(next: String) -> void:
 	hud_panel.visible = is_room
 	desire_panel.visible = is_room
 	furniture_layer.visible = is_room
-	char_node.visible = is_room
 	overlay.visible = is_room and not placing.is_empty()
 	ghost.visible = is_room and not placing.is_empty()
 	if next == "title":
@@ -309,56 +404,122 @@ func show_screen(next: String) -> void:
 		_layout_room()
 		_update_hud()
 		_update_desire_panel()
-		if not placing.is_empty():
-			_update_overlay_transform()
-			_update_ghost()
-
-	var hint: String = {
-		"map": "관악구 선택 (화면을 누르세요)",
-		"filter": "조건 확정 (화면을 누르세요)",
-		"listing": "이 집 구경하기 (화면을 누르세요)",
-		"house": "침실로 이동 (화면을 누르세요)",
-	}.get(next, "")
-	_show_toast(hint, 2.2)
+		time_running = true
 
 
 func _show_title_menu() -> void:
 	_open_popup("방 한 칸에서 한남동까지",
-		["서울에서 첫 직장을 얻었어요.", "가진 돈 4,500,000원. 좋은 집을 만들어봐요."])
-	var new_b := _mk_button("새 게임", Callable(self, "_start_new_game"))
-	new_b.custom_minimum_size = Vector2(280, 60)
+		["서울에서 첫 직장을 얻었어요.", "가진 돈 4,500,000원.", "첫 직장과 첫 집을 골라 새 삶을 시작해요."])
+	var new_b := _mk_button("새 게임", Callable(self, "_show_job_select"))
+	new_b.custom_minimum_size = Vector2(300, 60)
 	popup_body.add_child(new_b)
 	if gs.has_save():
 		var cont := _mk_button("이어하기", Callable(self, "_continue_game"))
-		cont.custom_minimum_size = Vector2(280, 60)
+		cont.custom_minimum_size = Vector2(300, 60)
 		popup_body.add_child(cont)
 
 
-func _start_new_game() -> void:
-	_close_popup()
-	gs = GameStateScript.new()
-	purchased_from_load_clear()
-	_show_toast("관악구 원룸에 입주했어요. 월세 80만원.", 2.5)
-	show_screen("map")
+# ---------------------------------------------------------------- 직장 선택 (03§3)
+func _show_job_select() -> void:
+	show_screen("title")
+	_open_popup("첫 직장을 선택하세요",
+		["월급 · 업무강도 · 부업 기회가 모두 달라요.", "나중에 이직할 수도 있어요."])
+	for c in GameStateScript.COMPANIES:
+		var comp: Dictionary = c
+		var btn := _mk_button("", Callable())
+		btn.pressed.connect(func(): _pick_job(comp))
+		btn.custom_minimum_size = Vector2(560, 74)
+		var rich := Label.new()
+		rich.text = "%s — 월급 %s · 부업 %d회/월 · 통근지 %s" % [
+			comp["name"], _fmt(comp["salary"]), comp["sidejobs"], comp["district"]]
+		rich.add_theme_font_override("font", font)
+		rich.add_theme_font_size_override("font_size", 19)
+		rich.add_theme_color_override("font_color", Color(0.35, 0.26, 0.18))
+		btn.add_child(rich)
+		var desc := _label(comp["desc"], 14, Color(0.5, 0.42, 0.32))
+		desc.position = Vector2(20, 42)
+		btn.add_child(desc)
+		popup_body.add_child(btn)
+
+
+func _pick_job(comp: Dictionary) -> void:
+	gs.company = comp.duplicate()
+	_show_listing_select()
+
+
+# ---------------------------------------------------------------- 매물 선택 (02§9)
+func _show_listing_select() -> void:
+	_open_popup("첫 집을 고르세요",
+		["월세가 싸면 통근이 길고, 가까우면 비싸요.", "월 생활비가 달라집니다."])
+	for l in GameStateScript.LISTINGS:
+		var li: Dictionary = l
+		var btn := _mk_button("", Callable())
+		btn.pressed.connect(func(): _pick_listing(li))
+		btn.custom_minimum_size = Vector2(560, 84)
+		var rich := Label.new()
+		rich.text = "%s (%s · %s) — 월세 %s + 관리비 %s" % [
+			li["name"], li["region"], li["size"], _fmt(li["rent"]), _fmt(li["maintenance"])]
+		rich.add_theme_font_override("font", font)
+		rich.add_theme_font_size_override("font_size", 19)
+		rich.add_theme_color_override("font_color", Color(0.35, 0.26, 0.18))
+		btn.add_child(rich)
+		var desc := _label("%s · 통근 %d분 (부업 %d회/월)" % [
+			li["desc"], li["commute"],
+			gs.company["sidejobs"] + GameStateScript.commute_sidejob_adj(li["commute"])], 14,
+			Color(0.5, 0.42, 0.32))
+		desc.position = Vector2(20, 48)
+		btn.add_child(desc)
+		popup_body.add_child(btn)
+
+
+func _pick_listing(li: Dictionary) -> void:
+	gs.listing = li.duplicate()
+	gs.contract_remaining = GameStateScript.CONTRACT_LENGTH
+	_close_all_popups()
+	gs = _reset_run_state()
+	show_screen("room")
+	_show_toast("%s 입주! 계약 24개월 · 월 지출 %s원" % [
+		li["name"], _fmt(gs.monthly_expenses())], 3.0)
+	agent.place_at_cell(Vector2i(8, 8))
+
+
+func _reset_run_state() -> GameState:
+	var n := GameStateScript.new()
+	n.company = gs.company
+	n.listing = gs.listing
+	for iid in placed_nodes.keys():
+		placed_nodes[iid].queue_free()
+	placed_nodes.clear()
+	grid = GridModel.new(16, 12)
+	return n
 
 
 func _continue_game() -> void:
-	_close_popup()
+	_close_all_popups()
 	gs = GameStateScript.load_game()
 	_apply_loaded_game()
 	show_screen("room")
+	# 오프라인 정산 (04§4/§10)
+	var off := gs.offline_months(int(Time.get_unix_time_from_system()))
+	if off > 0:
+		var reports := []
+		for i in off:
+			reports.append(gs.settle_month())
+		var r0: Dictionary = reports[0]
+		_open_popup("돌아왔어요 — %d개월이 지났어요" % off, [
+			"월급 총 +%s원" % _fmt(int(r0["income"]) * off),
+			"지출 총 -%s원" % _fmt(int(r0["expenses"]) * off),
+			"계약 잔여 %d개월" % gs.contract_remaining,
+			"체력 %d · 스트레스 %d · 행복 %d" % [gs.energy, gs.stress, gs.happiness],
+		])
+		var ok := _mk_button("확인", Callable(self, "_close_all_popups"))
+		ok.custom_minimum_size = Vector2(300, 56)
+		popup_body.add_child(ok)
 	_show_toast("%d월차로 돌아왔어요" % gs.month, 2.0)
 
 
 func _apply_loaded_game() -> void:
-	# 저장된 placements 복원
-	var f := FileAccess.open(GameStateScript.SAVE_PATH, FileAccess.READ)
-	if f == null:
-		return
-	var data = JSON.parse_string(f.get_as_text())
-	if data == null or not data.has("placements"):
-		return
-	for p in data["placements"]:
+	for p in GameStateScript.load_placements():
 		var origin := Vector2i(int(p["ox"]), int(p["oy"]))
 		var layer := int(p["layer"])
 		var fp := GridModel.footprint_size(int(p["w"]), int(p["h"]), int(p["rot"]))
@@ -366,15 +527,10 @@ func _apply_loaded_game() -> void:
 			var iid := grid.place(p["fid"], fp.x, fp.y, origin, int(p["rot"]), layer)
 			if iid > 0:
 				_add_furniture_node(iid, p["fid"])
+	agent.on_furniture_changed()
 
 
-func purchased_from_load_clear() -> void:
-	for iid in placed_nodes.keys():
-		placed_nodes[iid].queue_free()
-	placed_nodes.clear()
-	grid = GridModel.new(16, 12)
-
-
+# ---------------------------------------------------------------- 좌표 유틸
 func _fit_bg(tex: Texture2D) -> void:
 	bg.texture = tex
 	var win := Vector2(1280, 720)
@@ -389,35 +545,72 @@ func _img_to_screen(p: Vector2) -> Vector2:
 	return bg.position + p * (bg.size.x / bg.texture.get_width())
 
 
-func _screen_to_img(p: Vector2) -> Vector2:
-	return (p - bg.position) * (bg.texture.get_width() / bg.size.x)
+func grid_to_screen(cell: Vector2i) -> Vector2:
+	return _img_to_screen(FloorProjector.cell_center(cell.x, cell.y))
+
+
+func screen_to_cell(p: Vector2) -> Vector2i:
+	var img := (p - bg.position) * (bg.texture.get_width() / bg.size.x)
+	return FloorProjector.img_to_cell(img)
+
+
+func char_width_px() -> float:
+	return float(slots["characters"]["c_idle"]["width_px"]) * (bg.size.x / bg.texture.get_width())
+
+
+func furniture_action(fid: String) -> String:
+	return str(slots["items"][fid].get("action", ""))
+
+
+## 가구 인스턴스의 상호작용 셀 (06§13) — 도달 가능한 것 우선
+func interaction_cell_for(iid: int) -> Vector2i:
+	var p: GridModel.Placement = grid.placements[iid]
+	var item: Dictionary = slots["items"][p.def_id]
+	var locals: Array = item.get("interaction_locals", [])
+	var fp := GridModel.footprint_size(p.def_w, p.def_h, p.rotation)
+	var best := Vector2i(-1, -1)
+	var best_d := 1e9
+	for local in locals:
+		var cell: Vector2i = GridModel.local_to_room(Vector2i(local[0], local[1]),
+				p.origin, fp.x, fp.y, p.rotation)
+		if cell.x < 0 or cell.x >= grid.width or cell.y < 0 or cell.y >= grid.height:
+			continue
+		var screen := grid_to_screen(cell)
+		var d: float = Vector2(agent.position.x, agent.position.y).distance_to(screen)
+		if d < best_d:
+			best_d = d
+			best = cell
+	return best
 
 
 func _layout_room() -> void:
-	var c: Dictionary = slots["characters"]["c_idle"]
-	var r: Dictionary = slots["room"]
-	var cw: float = c["width_px"] * (bg.size.x / bg.texture.get_width())
-	var chh: float = cw * char_node.texture.get_height() / char_node.texture.get_width()
-	var cx: float = bg.position.x + (float(r["x"]) + c["slot"][0] * float(r["w"])) * (bg.size.x / bg.texture.get_width())
-	var cy: float = bg.position.y + (float(r["y"]) + c["slot"][1] * float(r["h"])) * (bg.size.y / bg.texture.get_height())
-	char_node.size = Vector2(cw, chh)
-	char_node.position = Vector2(cx - cw * 0.5, cy - chh + 10.0)
 	for iid in placed_nodes:
 		_apply_placement_transform(placed_nodes[iid], grid.placements[iid])
 	_sort_furniture()
+	agent._resize(char_width_px())
 
 
 # ================================================================ HUD / 욕구
 func _update_hud() -> void:
 	for c in hud.get_children():
+		if c == month_bar:
+			continue
 		hud.remove_child(c)
 		c.queue_free()
-	var l1 := _label("%d월차  ·  지금 집 만족도: %s" % [gs.month, gs.satisfaction_label()], 24)
-	var l2 := _label("보유 %s원  ·  사용 가능 %s원" % [_fmt(gs.cash_balance), _fmt(gs.spendable_cash())], 19, Color(0.45, 0.35, 0.22))
-	var l3 := _label("체력 %d  스트레스 %d  행복 %d" % [gs.energy, gs.stress, gs.happiness], 17, Color(0.32, 0.24, 0.16))
+	var l1 := _label("%d월차 · 만족도 %s · 계약 %d개월 남음" % [
+			gs.month, gs.satisfaction_label(), gs.contract_remaining], 22)
+	var l2 := _label("보유 %s원 · 사용 가능 %s원" % [_fmt(gs.cash_balance), _fmt(gs.spendable_cash())], 17,
+			Color(0.45, 0.35, 0.22))
+	var l3 := _label("체력 %d(%s) · 스트레스 %d(%s) · 행복 %d(%s)" % [
+			gs.energy, GameStateScript.energy_label(gs.energy),
+			gs.stress, GameStateScript.stress_label(gs.stress),
+			gs.happiness, GameStateScript.happiness_label(gs.happiness)], 15, Color(0.32, 0.24, 0.16))
 	hud.add_child(l1)
 	hud.add_child(l2)
 	hud.add_child(l3)
+	hud.move_child(month_bar, 3)
+	month_bar.max_value = GameStateScript.MONTH_SECONDS
+	month_bar.value = gs.month_seconds
 
 
 func _update_desire_panel() -> void:
@@ -430,19 +623,19 @@ func _update_desire_panel() -> void:
 
 	if gs.goal_done:
 		col.add_child(_label("♥ 모든 소원 완성!", 22, Color(0.72, 0.35, 0.30)))
-		col.add_child(_label("방이 완성됐어요. 이제 다음 목표는\n더 좋은 집!", 16))
+		col.add_child(_label("방이 완성됐어요. 다음 목표는\n더 좋은 집!", 16))
 		return
 
 	var d: Dictionary = GameStateScript.DESIRES[gs.desire_index]
-	col.add_child(_label("지금 갖고 싶어요 (%d/%d)" % [gs.desire_index + 1, GameStateScript.DESIRES.size()], 19))
-	var line := _label(d["line"], 15)
+	col.add_child(_label("지금 갖고 싶어요 (%d/%d)" % [gs.desire_index + 1, GameStateScript.DESIRES.size()], 18))
+	var line := _label(d["line"], 14)
 	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	line.custom_minimum_size.x = 260
+	line.custom_minimum_size.x = 258
 	col.add_child(line)
 	for fid in d["items"]:
 		var item: Dictionary = slots["items"][fid]
 		var mark := "○" if not gs.purchased.has(fid) else "✔"
-		var need := _label("%s %s — %s원" % [mark, item["name"], _fmt(item["price"])], 15,
+		var need := _label("%s %s — %s원" % [mark, item["name"], _fmt(item["price"])], 14,
 				Color(0.3, 0.5, 0.3) if gs.purchased.has(fid) else Color(0.55, 0.44, 0.30))
 		col.add_child(need)
 
@@ -464,8 +657,26 @@ func _start_placing(fid: String) -> void:
 	place_origin = _find_free_origin(fp, _item_layer(fid))
 	ghost.texture = load(item["sprite"])
 	ghost.flip_h = false
-	_close_popup()
+	_close_all_popups()
+	time_running = false   # 04§2.4: 중요 결정 중 시간 정지
 	show_screen("room")
+	time_running = false
+	_update_overlay_transform()
+	_update_ghost()
+
+
+func _start_placing_from_storage(fid: String) -> void:
+	placing = fid
+	place_rotation = 0
+	var item: Dictionary = slots["items"][fid]
+	var fp := GridModel.footprint_size(item["grid"][0], item["grid"][1], 0)
+	place_origin = _find_free_origin(fp, _item_layer(fid))
+	ghost.texture = load(item["sprite"])
+	ghost.flip_h = false
+	_close_all_popups()
+	time_running = false
+	show_screen("room")
+	time_running = false
 	_update_overlay_transform()
 	_update_ghost()
 
@@ -475,10 +686,8 @@ func _find_free_origin(fp: Vector2i, layer: int) -> Vector2i:
 		for gx in range(grid.width - fp.x):
 			var oy := 2 + gy
 			var ox := 3 + gx
-			if ox + fp.x > grid.width - 1:
-				break
-			if oy + fp.y > grid.height - 1:
-				break
+			if ox + fp.x > grid.width - 1: break
+			if oy + fp.y > grid.height - 1: break
 			if grid.can_place(fp.x, fp.y, Vector2i(ox, oy), 0, layer):
 				return Vector2i(ox, oy)
 	return Vector2i(0, 0)
@@ -490,10 +699,23 @@ func _rotate_placing() -> void:
 	_update_ghost()
 
 
+func _store_placing() -> void:
+	# 05§16: [보관함에 넣기]
+	var fid := placing
+	var done: Dictionary = gs.on_furniture_owned(fid)
+	gs.save_game_with(_placements_list())
+	placing = ""
+	_show_toast("%s를 보관함에 넣었어요" % slots["items"][fid]["name"], 1.8)
+	_update_hud()
+	_update_desire_panel()
+	show_screen("room")
+	if not done.is_empty():
+		_desire_celebration(done)
+
+
 func _cancel_placing() -> void:
 	var item: Dictionary = slots["items"][placing]
-	gs.cash_balance += item["price"]   # 구매 취소 = 전액 환불 (on_furniture_owned는 배치 확정 시에만 호출됨)
-	_update_hud()
+	gs.cash_balance += item["price"]
 	placing = ""
 	_show_toast("구매를 취소했어요 (환불 완료)", 1.8)
 	show_screen("room")
@@ -548,19 +770,12 @@ func _on_bg_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed:
 		if not placing.is_empty():
 			_try_place_here(event.position)
-			return
-		match state:
-			"title": pass  # 타이틀은 팝업 버튼으로
-			"map": show_screen("filter")
-			"filter": show_screen("listing")
-			"listing": show_screen("house")
-			"house": show_screen("room")
 
 
 func _ghost_follow(screen_pos: Vector2) -> void:
 	if placing.is_empty():
 		return
-	var cell := FloorProjector.img_to_cell(_screen_to_img(screen_pos))
+	var cell := screen_to_cell(screen_pos)
 	if cell.x < 0:
 		return
 	var item: Dictionary = slots["items"][placing]
@@ -568,10 +783,8 @@ func _ghost_follow(screen_pos: Vector2) -> void:
 	var ox: int = clampi(cell.x - fp.x / 2, 0, grid.width - fp.x)
 	var oy: int = clampi(cell.y - fp.y / 2, 0, grid.height - fp.y)
 	if item["layer"] == "wall":
-		if ox > 1:
-			oy = 0
-		else:
-			ox = 0
+		if ox > 1: oy = 0
+		else: ox = 0
 	place_origin = Vector2i(ox, oy)
 	_update_ghost()
 
@@ -582,7 +795,7 @@ func _try_place_here(screen_pos: Vector2) -> void:
 	var fp := GridModel.footprint_size(item["grid"][0], item["grid"][1], place_rotation)
 	var layer := _item_layer(placing)
 	if not grid.can_place(fp.x, fp.y, place_origin, place_rotation, layer):
-		_show_toast("여기엔 놓을 수 없어요", 1.2)
+		_show_toast("여기엔 놓을 수 없어요", 1.0)
 		return
 	var iid := grid.place(placing, fp.x, fp.y, place_origin, place_rotation, layer)
 	if iid < 0:
@@ -591,18 +804,21 @@ func _try_place_here(screen_pos: Vector2) -> void:
 	_apply_placement_transform(node, grid.placements[iid])
 	_sort_furniture()
 	var done_desire: Dictionary = gs.on_furniture_owned(placing)
+	var placed_fid := placing
 	placing = ""
 	overlay.visible = false
 	ghost.visible = false
 	place_bar.visible = false
 	bottom_bar.visible = true
+	time_running = true
 	gs.save_game_with(_placements_list())
 	_update_hud()
 	_update_desire_panel()
+	agent.on_furniture_changed()
+	agent.notify_new_furniture(placed_fid)   # 즉시 사용하러 감 (07§13)
+	_spawn_floaty(agent.position + Vector2(0, -120), "%s 배치!" % item["name"], Color(0.3, 0.5, 0.3))
 	if not done_desire.is_empty():
 		_desire_celebration(done_desire)
-	else:
-		_show_toast("%s 배치 완료!" % item["name"], 1.6)
 
 
 func _add_furniture_node(iid: int, fid: String) -> TextureRect:
@@ -648,122 +864,221 @@ func _sort_furniture() -> void:
 	var nodes: Array = []
 	for iid in placed_nodes:
 		nodes.append([placed_nodes[iid].get_meta("sort_y", 0.0), placed_nodes[iid]])
+	# 캐릭터는 현재 y 기준 함께 정렬
+	var agent_y: float = screen_to_cell(Vector2(agent.position.x, agent.position.y)).y
+	nodes.append([agent_y + 100.0, agent, true])
 	nodes.sort_custom(func(a, b): return a[0] < b[0])
 	for i in nodes.size():
 		furniture_layer.move_child(nodes[i][1], i)
 
 
-func _goto_house() -> void:
-	show_screen("house")
+func _sort_with_agent() -> void:
+	_sort_furniture()
 
 
-# ================================================================ 구매/부족/부업
+# ================================================================ 구매/부업
 func _open_shop() -> void:
-	shop_cash_label.text = "사용 가능 %s원" % _fmt(gs.spendable_cash())
+	shop_cash_label.text = "사용 가능 %s원 · 부업 %d/%d회" % [
+		_fmt(gs.spendable_cash()), gs.sidejobs_used, gs.sidejob_max()]
 	for card in shop_panel.get_child(0).get_child(2).get_children():
 		var fid: String = card.get_meta("item_id")
 		var buy: Button = card.get_meta("buy_btn")
 		buy.text = "구매됨" if gs.purchased.has(fid) else "구매"
 		buy.disabled = gs.purchased.has(fid)
-	_close_popup()
+	_close_all_popups()
 	dim.visible = true
 	shop_panel.visible = true
 
 
-func _close_shop() -> void:
-	shop_panel.visible = false
-	dim.visible = false
-
-
 func _try_buy(fid: String, buy_btn: Button = null) -> void:
 	if gs.purchased.has(fid):
-		_show_toast("이미 구입한 가구예요", 1.6)
+		_show_toast("이미 구입한 가구예요", 1.4)
 		return
 	var item: Dictionary = slots["items"][fid]
 	if gs.try_spend(item["price"]):
 		if buy_btn != null:
 			buy_btn.text = "구매됨"
 			buy_btn.disabled = true
-		_close_shop()
-		_show_toast("%s 구매! 위치를 선택하세요" % item["name"], 1.8)
+		_spawn_floaty(Vector2(640, 300), "-%s원" % _fmt(item["price"]), Color(0.75, 0.4, 0.3))
 		_update_hud()
 		_start_placing(fid)
 	else:
-		# 08 §2: 부족액 안내 → 기다리기 / 부업하기
 		var lack := gs.shortfall(item["price"])
-		_open_popup("%s — 갖고 싶은데…" % item["name"],
-			["%s원이 필요해요." % _fmt(item["price"]),
-			 "사용 가능 현금 %s원" % _fmt(gs.spendable_cash()),
-			 "%s원이 부족해요." % _fmt(lack)])
-		var sj := _mk_button("부업하기 (+%s원)" % _fmt(GameStateScript.SIDEJOB_REWARD),
-				Callable(self, "_open_sidejob"))
-		sj.custom_minimum_size = Vector2(400, 58)
+		_open_popup("%s — 갖고 싶은데…" % item["name"], [
+			"%s원이 필요해요." % _fmt(item["price"]),
+			"사용 가능 현금 %s원" % _fmt(gs.spendable_cash()),
+			"%s원이 부족해요." % _fmt(lack),
+			"이번 달 부업으로 최대 +%s원 더 벌 수 있어요." % _fmt(
+				gs.sidejob_reward() * maxi(0, gs.sidejob_max() - gs.sidejobs_used)),
+		])
+		var sj := _mk_button("부업하기", Callable(self, "_open_sidejob"))
+		sj.custom_minimum_size = Vector2(420, 56)
 		popup_body.add_child(sj)
-		var wait := _mk_button("다음 월급까지 기다리기", Callable(self, "_close_popup"))
-		wait.custom_minimum_size = Vector2(400, 58)
+		var wait := _mk_button("다음 월급까지 기다리기", Callable(self, "_close_all_popups"))
+		wait.custom_minimum_size = Vector2(420, 56)
 		popup_body.add_child(wait)
 
 
 func _open_sidejob() -> void:
-	var remain: int = GameStateScript.SIDEJOB_MAX_PER_MONTH - gs.sidejobs_used
+	var remain: int = gs.sidejob_max() - gs.sidejobs_used
 	_open_popup("부업하기", [
-		"오늘 할 수 있는 부업",
-		"%s — 보상 %s원" % [GameStateScript.SIDEJOBS[gs.sidejobs_used % GameStateScript.SIDEJOBS.size()],
-				_fmt(GameStateScript.SIDEJOB_REWARD)],
-		"이번 달 부업 %d/%d회 · 오늘 번 돈 %s원" % [gs.sidejobs_used,
-				GameStateScript.SIDEJOB_MAX_PER_MONTH, _fmt(gs.month_sidejob_income)],
+		"오늘 할 수 있는 부업: %s" % GameStateScript.SIDEJOB_NAMES[
+				gs.sidejobs_used % GameStateScript.SIDEJOB_NAMES.size()],
+		"보상 %s원 · 이번 달 %d/%d회" % [_fmt(gs.sidejob_reward()), gs.sidejobs_used, gs.sidejob_max()],
 	])
-	var do_b := _mk_button("부업 시작", Callable(self, "_do_sidejob"))
-	do_b.custom_minimum_size = Vector2(400, 58)
+	var do_b := _mk_button("부업 시작", Callable())
+	do_b.pressed.connect(func(): _do_sidejob())
+	do_b.custom_minimum_size = Vector2(420, 56)
 	popup_body.add_child(do_b)
 	if remain <= 0:
 		do_b.disabled = true
-		do_b.text = "오늘은 끝! (월 %d회)" % GameStateScript.SIDEJOB_MAX_PER_MONTH
-	var close := _mk_button("그만두기", Callable(self, "_close_popup"))
-	close.custom_minimum_size = Vector2(400, 58)
+		do_b.text = "오늘은 끝! (달 %d회)" % gs.sidejob_max()
+	var more := _mk_button("한 번 더", Callable())
+	more.pressed.connect(func(): _do_sidejob())
+	more.custom_minimum_size = Vector2(420, 56)
+	if remain <= 1:
+		more.disabled = true
+	popup_body.add_child(more)
+	var close := _mk_button("그만두기", Callable(self, "_close_all_popups"))
+	close.custom_minimum_size = Vector2(420, 56)
 	popup_body.add_child(close)
 
 
 func _do_sidejob() -> void:
 	if gs.do_sidejob():
+		_spawn_floaty(Vector2(640, 260), "+%s원" % _fmt(gs.sidejob_reward()), Color(0.4, 0.6, 0.35))
 		_open_sidejob()
 		_update_hud()
 		gs.save_game_with(_placements_list())
 	else:
-		_show_toast("오늘은 부업을 다 했어요", 1.5)
+		_show_toast("오늘은 부업을 다 했어요", 1.4)
 
 
-# ================================================================ 월 정산 / 목표
-func _next_month() -> void:
+# ================================================================ 월 정산 / 계약
+func _on_month_boundary() -> void:
+	time_running = false
 	var r: Dictionary = gs.settle_month()
 	var ev: Dictionary = r.get("event", {})
 	var lines: Array = [
 		"— %d월 정산 —" % r["month"],
-		"월급 +%s원  ·  생활비 -%s원" % [_fmt(r["income"]), _fmt(r["expenses"])],
+		"월급 +%s원 · 지출 -%s원 (월세·관리비 %s + 생활비 1,300,000)" % [
+			_fmt(r["income"]), _fmt(r["expenses"]), _fmt(gs.rent_total())],
 	]
 	if r["sidejob"] > 0:
 		lines.append("부업 수입 +%s원" % _fmt(r["sidejob"]))
 	if not ev.is_empty():
 		lines.append("이번 달: %s" % ev["text"])
-	lines.append("체력 %d · 스트레스 %d · 행복 %d" % [r["energy"], r["stress"], r["happiness"]])
+	lines.append("체력 %d(%s) · 스트레스 %d(%s) · 행복 %d(%s)" % [
+			r["energy"], GameStateScript.energy_label(r["energy"]),
+			r["stress"], GameStateScript.stress_label(r["stress"]),
+			r["happiness"], GameStateScript.happiness_label(r["happiness"])])
 	lines.append("보유 %s원 · 사용 가능 %s원" % [_fmt(gs.cash_balance), _fmt(gs.spendable_cash())])
 	_open_popup("%d월이 되었어요" % r["month"], lines)
-	var ok := _mk_button("확인", Callable(self, "_close_popup"))
-	ok.custom_minimum_size = Vector2(300, 58)
+	var ok := _mk_button("확인", Callable())
+	ok.pressed.connect(func(): _after_settle())
+	ok.custom_minimum_size = Vector2(300, 56)
 	popup_body.add_child(ok)
 	_update_hud()
 	_update_desire_panel()
 	gs.save_game_with(_placements_list())
+	if gs.contract_remaining == 3:
+		_show_toast("⚠ 3개월 후 계약 만료! 재계약/이사를 준비하세요", 3.0)
+	elif gs.contract_remaining == 0:
+		_contract_expiry()
+
+
+func _after_settle() -> void:
+	_close_all_popups()
+	if gs.contract_remaining <= 0:
+		_contract_expiry()
+	else:
+		time_running = true
+
+
+# ---------------------------------------------------------------- 계약 만료 (04§14)
+func _contract_expiry() -> void:
+	_open_popup("계약이 만료되었어요", [
+		"어떻게 할지 결정해야 해요. 결정하는 동안 시간은 멈춰요.",
+		"재계약: 월세 5% 인상 갱신 (24개월)",
+		"이사: 가구는 전부 보관함으로 → 새 집에서 다시 배치 (09§9)",
+	])
+	var renew := _mk_button("재계약하기", Callable())
+	renew.pressed.connect(func(): _renew())
+	renew.custom_minimum_size = Vector2(440, 56)
+	popup_body.add_child(renew)
+	var move := _mk_button("다른 집 알아보기", Callable())
+	move.pressed.connect(func(): _move_flow())
+	move.custom_minimum_size = Vector2(440, 56)
+	popup_body.add_child(move)
+
+
+func _renew() -> void:
+	gs.renew_contract()
+	_close_all_popups()
+	time_running = true
+	_show_toast("재계약 완료! 월세 %s원 · 24개월" % _fmt(int(gs.listing["rent"])), 2.5)
+	_update_hud()
+	gs.save_game_with(_placements_list())
+
+
+func _move_flow() -> void:
+	_close_all_popups()
+	_open_popup("새 집을 고르세요", ["가구는 모두 보관함으로 옮겨져 새 집에서 다시 배치해요."])
+	for l in GameStateScript.LISTINGS:
+		var li: Dictionary = l
+		var btn := _mk_button("", Callable())
+		btn.pressed.connect(func(): _do_move(li))
+		btn.custom_minimum_size = Vector2(560, 84)
+		var rich := Label.new()
+		rich.text = "%s (%s · %s) — 월세 %s + 관리비 %s · 통근 %d분" % [
+			li["name"], li["region"], li["size"], _fmt(li["rent"]), _fmt(li["maintenance"]), li["commute"]]
+		rich.add_theme_font_override("font", font)
+		rich.add_theme_font_size_override("font_size", 18)
+		rich.add_theme_color_override("font_color", Color(0.35, 0.26, 0.18))
+		btn.add_child(rich)
+		popup_body.add_child(btn)
+
+
+func _do_move(li: Dictionary) -> void:
+	gs.move_to(li)
+	for iid in placed_nodes.keys():
+		placed_nodes[iid].queue_free()
+	placed_nodes.clear()
+	grid = GridModel.new(16, 12)
+	_close_all_popups()
+	show_screen("room")
+	agent.on_furniture_changed()
+	agent.place_at_cell(Vector2i(8, 8))
+	_show_toast("%s으로 이사! 가구 %d개가 보관함에 있어요" % [li["name"], gs.storage.size()], 3.5)
+	_update_hud()
+	_update_desire_panel()
+	gs.save_game_with(_placements_list())
+
+
+# ================================================================ 자율생활 연결
+func _on_action_finished(eff: Dictionary) -> void:
+	gs.energy = clampi(gs.energy + int(eff.get("energy", 0)), 0, 100)
+	gs.stress = clampi(gs.stress + int(eff.get("stress", 0)), 0, 100)
+	gs.happiness = clampi(gs.happiness + int(eff.get("happiness", 0)), 0, 100)
+	var txt := ""
+	if int(eff.get("happiness", 0)) >= 4: txt = "행복 +%d" % int(eff["happiness"])
+	elif int(eff.get("stress", 0)) <= -6: txt = "스트레스 %d" % int(eff["stress"])
+	elif int(eff.get("energy", 0)) >= 8: txt = "체력 +%d" % int(eff["energy"])
+	if not txt.is_empty():
+		_spawn_floaty(agent.position + Vector2(0, -110), txt, Color(0.45, 0.6, 0.4))
+	_update_hud()
+	_sort_furniture()
 
 
 func _desire_celebration(d: Dictionary) -> void:
 	_open_popup("소원이 이뤄졌어요! ♥", [
 		"%s 완성!" % d["name"],
 		"행복이 크게 올랐어요. 방이 점점 좋아지고 있어요.",
-		"다음 소원도 기대돼요.",
+		"캐릭터가 새 가구를 사용하기 시작했어요!",
 	])
-	var ok := _mk_button("좋아!", Callable(self, "_close_popup"))
-	ok.custom_minimum_size = Vector2(300, 58)
+	var ok := _mk_button("좋아!", Callable())
+	ok.pressed.connect(func(): _close_all_popups(); time_running = true)
+	ok.custom_minimum_size = Vector2(300, 56)
 	popup_body.add_child(ok)
 	if gs.goal_done:
 		_show_goal()
@@ -773,14 +1088,15 @@ func _show_goal() -> void:
 	_open_popup("🏆 첫 방 완성!", [
 		"5개의 소원을 모두 이뤘어요!",
 		"체력 %d · 스트레스 %d · 행복 %d" % [gs.energy, gs.stress, gs.happiness],
-		"이사 자금을 모으면 더 좋은 집으로 갈 수 있어요. (다음 목표 예고)",
+		"계약 만료 시 더 좋은 집으로 이사할 수 있어요.",
 	])
-	var keep := _mk_button("계속 꾸미기", Callable(self, "_close_popup"))
-	keep.custom_minimum_size = Vector2(400, 58)
+	var keep := _mk_button("계속 꾸미기", Callable())
+	keep.pressed.connect(func(): _close_all_popups(); time_running = true)
+	keep.custom_minimum_size = Vector2(420, 56)
 	popup_body.add_child(keep)
 
 
-# ================================================================ 공용 팝업
+# ================================================================ 팝업/피드백
 func _open_popup(title_text: String, lines: Array) -> void:
 	popup_title.text = title_text
 	for c in popup_body.get_children():
@@ -789,21 +1105,36 @@ func _open_popup(title_text: String, lines: Array) -> void:
 		popup_body.remove_child(c)
 		c.queue_free()
 	for line in lines:
-		var l := _label(str(line), 19)
+		var l := _label(str(line), 18)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		popup_body.add_child(l)
-	_close_shop()
+	_close_all_popups()
 	dim.visible = true
 	popup.visible = true
+	time_running = false
 
 
-func _close_popup() -> void:
+func _close_all_popups() -> void:
 	popup.visible = false
 	shop_panel.visible = false
+	storage_panel.visible = false
 	dim.visible = false
+	if state == "room" and placing.is_empty():
+		time_running = true
 
 
-# ================================================================ 유틸
+## 플로팅 효과 텍스트 (피드백 강화)
+func _spawn_floaty(pos: Vector2, text: String, color: Color) -> void:
+	var l := _label(text, 22, color)
+	l.position = pos - Vector2(80, 0)
+	floaties.add_child(l)
+	var tw := l.create_tween()
+	tw.set_parallel(true)
+	tw.tween_property(l, "position:y", pos.y - 70, 1.2).set_ease(Tween.EASE_OUT)
+	tw.tween_property(l, "modulate:a", 0.0, 1.2).set_delay(0.4)
+	tw.chain().tween_callback(l.queue_free)
+
+
 func _show_toast(text: String, dur: float) -> void:
 	if text.is_empty():
 		toast.visible = false

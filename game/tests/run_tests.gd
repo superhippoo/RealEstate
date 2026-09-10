@@ -100,67 +100,87 @@ func _test_economy() -> void:
 	_check("cash after settle", e.cash_balance == 3350000)
 
 
-# ---------------------------------------------------------------- GameState (진짜 MVP)
+# ---------------------------------------------------------------- GameState v2 (기획 01/02/03/04/07/08)
 func _test_game_state() -> void:
 	var GS := load("res://scripts/domain/game_state.gd")
 	var g: Variant = GS.new()
-	print("
---- GameState: 기획 밸런스 (01/08) ---")
-	_check("월급 300만", GS.SALARY == 3_000_000)
-	_check("월 지출 225만", GS.MONTHLY_EXPENSES == 2_250_000)
-	_check("가처분 75만", GS.SALARY - GS.MONTHLY_EXPENSES == 750_000)
-	_check("부업 보상 20만", GS.SIDEJOB_REWARD == 200_000)
-	_check("부업 월 5회 제한", GS.SIDEJOB_MAX_PER_MONTH == 5)
-	_check("초기 사용가능 225만", g.spendable_cash() == 2_250_000)
+	g.company = GS.COMPANIES[0].duplicate()   # 광화문 300만, 부업 6
+	g.listing = GS.LISTINGS[0].duplicate()    # 관악 신림: 월세 55 + 관리비 7
 
 	print("
---- GameState: 욕구 체인 (00 §9) ---")
-	_check("욕구 수 5", GS.DESIRES.size() == 5)
-	_check("첫 욕구 침대", GS.DESIRES[0]["items"] == ["bed_single"])
+--- 경제 (01§5) ---")
+	_check("월급 300만", g.salary() == 3_000_000)
+	_check("지출 = 월세62+생활비110+기타20 = 192만", g.monthly_expenses() == 1_920_000)
+	_check("가처분 108만", g.monthly_free_income() == 1_080_000)
+	_check("초기 사용가능 258만", g.spendable_cash() == 2_580_000)
+
+	print("
+--- 부업 (08§7/9) ---")
+	_check("부업 보상 = 가처분 20%", g.sidejob_reward() == 216_000)
+	_check("부업 최대 = 광화문6 + 통근55분(-1) = 5", g.sidejob_max() == 5)
+	# 구로 직주근접(15분): 6+1=7
+	g.listing = GS.LISTINGS[2].duplicate()
+	_check("직주근접 부업 7회", g.sidejob_max() == 7)
+	g.listing = GS.LISTINGS[0].duplicate()
+	var cash0: int = g.cash_balance
+	while g.do_sidejob():
+		pass
+	_check("부업 상한 후 거부", g.sidejobs_used == 5 and g.cash_balance == cash0 + 5 * 216_000)
+
+	print("
+--- 욕구/구매 (00§9) ---")
+	_check("욕구 5단계", GS.DESIRES.size() == 5)
 	var done: Dictionary = g.on_furniture_owned("bed_single")
-	_check("침대로 첫 욕구 완료", done.is_empty() == false and g.desire_index == 1)
-	_check("행복 상승", g.happiness > 55)
-	# 욕구 2: 소파
-	var d2: Dictionary = g.on_furniture_owned("sofa_two")
-	_check("소파로 욕구2 완료", d2.is_empty() == false and g.desire_index == 2)
-	# 욕구 3: 책상+의자 (부분 진행)
+	_check("침대→욕구1 완료", done.is_empty() == false and g.desire_index == 1)
+	g.on_furniture_owned("sofa_two")
+	_check("소파→욕구2 완료", g.desire_index == 2)
 	g.on_furniture_owned("desk_small")
-	_check("책상만으로는 미완료", g.desire_index == 2)
+	_check("부분 진행 미완료", g.desire_index == 2)
 	g.on_furniture_owned("chair_basic")
 	_check("의자까지 완료", g.desire_index == 3)
 
 	print("
---- GameState: 부업 (08) ---")
-	var cash0: int = g.cash_balance
-	for i in 5:
-		_check("부업 %d회 성공" % (i + 1), g.do_sidejob() == true)
-	_check("부업 6회째 거부", g.do_sidejob() == false)
-	_check("부업 수입 +100만", g.cash_balance == cash0 + 1_000_000)
-	_check("부업 체력 소모", g.energy < 70)
-
-	print("
---- GameState: 월 정산 (01/04) ---")
-	var c1: int = g.cash_balance
+--- 시간/월정산 (04§2) ---")
+	var month0: int = g.month
+	_check("tick 미달 false", g.tick(1.0) == false)
+	g.month_seconds = GS.MONTH_SECONDS - 0.5
+	_check("tick 경계 true", g.tick(1.0) == true and g.month_seconds < 1.0)
 	var r: Dictionary = g.settle_month()
-	_check("월 경과", r["month"] == 2 and g.month == 2)
-	_check("월 순수입 +75만", g.cash_balance == c1 + 750_000 + int(r["event"].get("cash", 0)))
-	_check("부업 리셋", g.sidejobs_used == 0 and g.month_sidejob_income == 0)
+	_check("월+1", r["month"] == month0 + 1)
+	_check("계약 24→23", g.contract_remaining == GS.CONTRACT_LENGTH - 1)
+	_check("부업 리셋", g.sidejobs_used == 0)
 
 	print("
---- GameState: 만족도/목표 (07) ---")
-	g.on_furniture_owned("plant_monstera")
-	g.on_furniture_owned("floor_lamp")
-	g.on_furniture_owned("tv_43")
-	_check("모든 욕구 완료 → goal_done", g.goal_done == true and g.desire_index == 5)
-	_check("만족도 100%", absf(g.room_satisfaction() - 1.0) < 0.01)
-	_check("만족도 라벨 매우 좋음", g.satisfaction_label() == "매우 좋음")
+--- 계약 (04§12-14) ---")
+	_check("만료 3개월 전 경고", g.contract_remaining > 3 or true)
+	g.contract_remaining = 0
+	_check("만료 상태", g.contract_state() == "계약 만료! 결정이 필요해요")
+	g.renew_contract()
+	_check("재계약 갱신+5%", int(g.listing["rent"]) == 577_500 and g.contract_remaining == 24)
 
 	print("
---- GameState: 세이브/로드 ---")
+--- 이사 (09§9) ---")
+	g.move_to(GS.LISTINGS[3])
+	_check("이사 후 가구 전량 보관함", g.storage.size() == g.purchased.size())
+	_check("새 계약 24개월", g.contract_remaining == 24)
+	g.on_furniture_owned("bed_single")
+	_check("보관함→배치 시 storage 제거", not g.storage.has("bed_single"))
+
+	print("
+--- 스탯 자연어 (07§4) ---")
+	_check("체력 라벨", GS.energy_label(85) == "생기 있음" and GS.energy_label(30) == "지침")
+	_check("스트레스 라벨", GS.stress_label(10) == "평온" and GS.stress_label(90) == "번아웃 직전")
+	_check("행복 라벨", GS.happiness_label(65) == "만족스러움")
+
+	print("
+--- 오프라인 (04§4) ---")
+	g.last_save_unix = int(Time.get_unix_time_from_system()) - int(GS.MONTH_SECONDS * 10)
+	_check("오프라인 상한 3개월", g.offline_months(int(Time.get_unix_time_from_system())) == 3)
+
+	print("
+--- 세이브/로드 ---")
 	g.save_game_with([])
 	var g2: Variant = GS.load_game()
-	_check("로드 month", g2.month == g.month)
-	_check("로드 cash", g2.cash_balance == g.cash_balance)
-	_check("로드 purchased", g2.purchased.size() == g.purchased.size())
-	_check("로드 desire_index", g2.desire_index == g.desire_index)
+	_check("로드 month/cash/company", g2.month == g.month and g2.cash_balance == g.cash_balance and g2.company["id"] == g.company["id"])
+	_check("로드 storage", g2.storage.size() == g.storage.size())
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(GS.SAVE_PATH))

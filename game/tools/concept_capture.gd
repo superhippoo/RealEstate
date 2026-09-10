@@ -1,24 +1,28 @@
 extends Node
-## 진짜 MVP 전체 흐름 자동 캡처 → review/mvp_*.png
+## MVP v4 전체 시나리오 자동 캡처 → review/mvp2_*.png
 
 var flow: Control
 var step := 0
 
 const STEPS := [
-	["title", "01_title_menu"],
-	["room_desire", "02_desire_panel"],
-	["shop", "03_shop"],
-	["shortfall", "04_shortfall_sidejob"],
-	["sidejob", "05_sidejob"],
-	["placing", "06_placing"],
-	["celebrate", "07_desire_done"],
-	["settle", "08_month_settle"],
-	["goal", "09_goal"],
+	["title", "01_title"],
+	["job", "02_job_select"],
+	["listing", "03_listing_select"],
+	["room", "04_room_start"],
+	["buy_bed", "05_placing_bed"],
+	["bed_placed", "06_bed_placed"],
+	["char_walking", "07_char_walking"],
+	["char_using", "08_char_using_bed"],
+	["settle", "09_month_settle"],
+	["sidejob", "10_sidejob"],
+	["shortfall", "11_shortfall_tv"],
+	["storage", "12_storage"],
+	["contract", "13_contract_expiry"],
+	["moved", "14_moved_new_room"],
 ]
 
 
 func _ready() -> void:
-	# 세이브 초기화 후 새 게임
 	var GS := load("res://scripts/domain/game_state.gd")
 	if FileAccess.file_exists(GS.SAVE_PATH):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(GS.SAVE_PATH))
@@ -31,9 +35,17 @@ func _ready() -> void:
 
 
 func _cell_screen(gx: int, gy: int) -> Vector2:
-	var img: Vector2 = flow.FloorProjector.cell_center(gx, gy)
-	var tex_w: float = flow.bg.texture.get_width()
-	return flow.bg.position + img * (flow.bg.size.x / tex_w)
+	return flow.grid_to_screen(Vector2i(gx, gy))
+
+
+func _wait_state(node: Node, prop: String, val: String, timeout_s: float = 6.0) -> bool:
+	var t := 0.0
+	while t < timeout_s:
+		await get_tree().process_frame
+		t += get_process_delta_time()
+		if node.get(prop) == val:
+			return true
+	return false
 
 
 func _next() -> void:
@@ -45,56 +57,54 @@ func _next() -> void:
 	var fname: String = STEPS[step][1]
 	match st:
 		"title":
-			pass  # _ready 상태 그대로 (타이틀 + 메뉴 팝업)
-		"room_desire":
-			flow._start_new_game()
-			await _frames(1)
-			flow.show_screen("filter")   # 지도→필터→매물→집 스킵
-			flow.show_screen("listing")
-			flow.show_screen("house")
-			flow.show_screen("room")
-		"shop":
-			flow._open_shop()
-		"shortfall":
-			flow._close_popup()
-			await _frames(1)
-			flow._try_buy("tv_43")   # 290만 > 사용가능 225만 → 부족 팝업
+			pass
+		"job":
+			flow._show_job_select()
+		"listing":
+			flow._pick_job(flow.gs.COMPANIES[0])   # 광화문
+		"room":
+			flow._pick_listing(flow.gs.LISTINGS[0])  # 관악 신림
+			await _frames(10)
+		"buy_bed":
+			flow._try_buy("bed_single")
+		"bed_placed":
+			flow._try_place_here(_cell_screen(9, 2))
+			flow._close_all_popups()
+			await _frames(2)
+		"char_walking":
+			await _wait_state(flow.agent, "state", "walking", 3.0)
+		"char_using":
+			await _wait_state(flow.agent, "state", "using", 8.0)
+			await _frames(20)   # 말풍선 표시 후
+		"settle":
+			flow.gs.month_seconds = flow.gs.MONTH_SECONDS - 0.4
+			await _frames(40)   # _process에서 boundary 발생
 		"sidejob":
 			flow._open_sidejob()
-			await _frames(1)
-		"placing":
-			flow._close_popup()
-			await _frames(1)
-			flow._try_buy("bed_single")
-		"celebrate":
-			await _frames(1)
-			flow._try_place_here(_cell_screen(9, 2))
-			await _frames(2)   # 욕구 완료 축하 팝업
-		"settle":
-			flow._close_popup()
-			await _frames(1)
-			flow._next_month()
-		"goal":
-			# 골 직전까지 빠르게 진행
-			flow._close_popup()
-			await _frames(1)
-			for pairs in [["sofa_two", [2, 8]], ["desk_small", [2, 2]], ["chair_basic", [2, 5]],
-					["plant_monstera", [15, 4]], ["floor_lamp", [15, 9]]]:
-				flow.gs.cash_balance += 3_000_000
-				flow._try_buy(pairs[0])
-				await _frames(1)
-				flow._try_place_here(_cell_screen(pairs[1][0], pairs[1][1]))
-				await _frames(1)
-				flow._close_popup()
-				await _frames(1)
-			flow.gs.cash_balance += 3_000_000
+			flow._do_sidejob()
+			await _frames(6)
+		"shortfall":
+			flow.gs.cash_balance = 2_000_000   # TV 못 사게
+			flow._update_hud()
 			flow._try_buy("tv_43")
-			await _frames(1)
-			flow._try_place_here(_cell_screen(15, 1))
+		"storage":
+			flow._close_all_popups()
+			flow.gs.cash_balance += 6_000_000
+			flow._try_buy("sofa_two")
 			await _frames(2)
-	await _frames(8)
+			flow._store_placing()   # 보관함에 넣기
+			await _frames(2)
+			flow._open_storage()
+		"contract":
+			flow._close_all_popups()
+			flow.gs.contract_remaining = 0
+			flow._contract_expiry()
+		"moved":
+			flow._do_move(flow.gs.LISTINGS[2])   # 구로 직주근접
+			await _frames(6)
+	await _frames(6)
 	var img := get_viewport().get_texture().get_image()
-	var out := "res://../review/mvp_%s.png" % fname
+	var out := "res://../review/mvp2_%s.png" % fname
 	img.save_png(out)
 	print("saved ", out)
 	step += 1
