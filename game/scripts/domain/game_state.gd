@@ -259,5 +259,8 @@ static func load_game() -> GameState:
 	if f:
 		var parsed = JSON.parse_string(f.get_as_text())
 		if parsed is Dictionary:
-			gs.from_dict(parsed)
+			if parsed.has("game"):
+				gs.from_dict(parsed["game"])
+			else:
+				gs.from_dict(parsed)
 	return gs
