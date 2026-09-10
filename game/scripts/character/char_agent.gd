@@ -227,12 +227,18 @@ func _start_using() -> void:
 	use_timer = float(use_action["dur"])
 	bubble.text = use_action["label"]
 	bubble_bg.visible = true
-	bubble_bg.position = Vector2(-bubble_bg.size.x * 0.5, -sprite.size.y - 34)
+	_bubble_follow()
 	action_started.emit(use_action["label"])
+
+
+func _bubble_follow() -> void:
+	# 캐릭터 몸통 위쪽에 항상 위치 (누운 포즈 포함)
+	bubble_bg.position = Vector2(-bubble_bg.size.x * 0.5, -sprite.size.y - 36)
 
 
 func _use_step(delta: float) -> void:
 	use_timer -= delta
+	_bubble_follow()
 	# 사용 중 미세 몸짓
 	if use_action.get("pose") == "sit":
 		sprite.scale = Vector2(1.0, 0.94)

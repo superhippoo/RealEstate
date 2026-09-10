@@ -161,7 +161,7 @@ func _build_ui() -> void:
 	toast.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	toast.set_anchors_preset(Control.PRESET_CENTER)
 	toast.offset_left = -340; toast.offset_right = 340
-	toast.offset_top = -60; toast.offset_bottom = 10
+	toast.offset_top = -110; toast.offset_bottom = -40
 	add_child(toast)
 
 	_build_shop_panel()
@@ -927,13 +927,22 @@ func _try_buy(fid: String, buy_btn: Button = null) -> void:
 		popup_body.add_child(wait)
 
 
-func _open_sidejob() -> void:
+func _open_sidejob(just_earned := 0) -> void:
 	var remain: int = gs.sidejob_max() - gs.sidejobs_used
-	_open_popup("부업하기", [
-		"오늘 할 수 있는 부업: %s" % GameStateScript.SIDEJOB_NAMES[
-				gs.sidejobs_used % GameStateScript.SIDEJOB_NAMES.size()],
-		"보상 %s원 · 이번 달 %d/%d회" % [_fmt(gs.sidejob_reward()), gs.sidejobs_used, gs.sidejob_max()],
-	])
+	var lines: Array = []
+	if just_earned > 0:
+		lines.append("일 끝!  +%s원" % _fmt(just_earned))
+	lines.append("오늘 할 수 있는 부업: %s" % GameStateScript.SIDEJOB_NAMES[
+			gs.sidejobs_used % GameStateScript.SIDEJOB_NAMES.size()])
+	lines.append("보상 %s원 · 이번 달 %d/%d회" % [_fmt(gs.sidejob_reward()), gs.sidejobs_used, gs.sidejob_max()])
+	_open_popup("부업하기", lines)
+	if just_earned > 0:
+		# 첫 줄(수입)을 큰 초록으로 강조
+		for c in popup_body.get_children():
+			if c is Label and str(c.text).begins_with("일 끝"):
+				c.add_theme_font_size_override("font_size", 30)
+				c.add_theme_color_override("font_color", Color(0.25, 0.55, 0.25))
+				break
 	var do_b := _mk_button("부업 시작", Callable())
 	do_b.pressed.connect(func(): _do_sidejob())
 	do_b.custom_minimum_size = Vector2(420, 56)
@@ -954,8 +963,7 @@ func _open_sidejob() -> void:
 
 func _do_sidejob() -> void:
 	if gs.do_sidejob():
-		_spawn_floaty(Vector2(640, 260), "+%s원" % _fmt(gs.sidejob_reward()), Color(0.4, 0.6, 0.35))
-		_open_sidejob()
+		_open_sidejob(gs.sidejob_reward())
 		_update_hud()
 		gs.save_game_with(_placements_list())
 	else:
@@ -1106,6 +1114,7 @@ func _show_goal() -> void:
 
 # ================================================================ 팝업/피드백
 func _open_popup(title_text: String, lines: Array) -> void:
+	toast.visible = false
 	popup_title.text = title_text
 	for c in popup_body.get_children():
 		if c == popup_title:
@@ -1113,7 +1122,7 @@ func _open_popup(title_text: String, lines: Array) -> void:
 		popup_body.remove_child(c)
 		c.queue_free()
 	for line in lines:
-		var l := _label(str(line), 18)
+		var l := _label(str(line), 19)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		popup_body.add_child(l)
 	_close_all_popups()
