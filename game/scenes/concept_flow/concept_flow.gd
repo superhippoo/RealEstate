@@ -414,7 +414,7 @@ func _update_hud() -> void:
 		c.queue_free()
 	var l1 := _label("%d월차  ·  지금 집 만족도: %s" % [gs.month, gs.satisfaction_label()], 24)
 	var l2 := _label("보유 %s원  ·  사용 가능 %s원" % [_fmt(gs.cash_balance), _fmt(gs.spendable_cash())], 19, Color(0.45, 0.35, 0.22))
-	var l3 := _label("체력 %d  스트레스 %d  행복 %d" % [gs.energy, gs.stress, gs.happiness], 17, Color(0.45, 0.56, 0.30))
+	var l3 := _label("체력 %d  스트레스 %d  행복 %d" % [gs.energy, gs.stress, gs.happiness], 17, Color(0.32, 0.24, 0.16))
 	hud.add_child(l1)
 	hud.add_child(l2)
 	hud.add_child(l3)
@@ -533,7 +533,7 @@ func _update_ghost() -> void:
 	var h := w * ghost.texture.get_height() / ghost.texture.get_width()
 	ghost.size = Vector2(w, h)
 	ghost.position = scr - Vector2(w * 0.5, h - 12.0 * sc)
-	ghost.modulate = Color(0.6, 1.0, 0.6, 0.75) if ok else Color(1.0, 0.5, 0.45, 0.75)
+	ghost.modulate = Color(0.5, 1.0, 0.5, 0.85) if ok else Color(1.0, 0.35, 0.3, 0.85)
 	if item["layer"] == "wall":
 		ghost.position.y -= h * 0.55
 	overlay.highlight_origin = place_origin
@@ -592,6 +592,10 @@ func _try_place_here(screen_pos: Vector2) -> void:
 	_sort_furniture()
 	var done_desire: Dictionary = gs.on_furniture_owned(placing)
 	placing = ""
+	overlay.visible = false
+	ghost.visible = false
+	place_bar.visible = false
+	bottom_bar.visible = true
 	gs.save_game_with(_placements_list())
 	_update_hud()
 	_update_desire_panel()
@@ -687,7 +691,7 @@ func _try_buy(fid: String, buy_btn: Button = null) -> void:
 	else:
 		# 08 §2: 부족액 안내 → 기다리기 / 부업하기
 		var lack := gs.shortfall(item["price"])
-		_open_popup("%s이(가) 갖고 싶은데…" % item["name"],
+		_open_popup("%s — 갖고 싶은데…" % item["name"],
 			["%s원이 필요해요." % _fmt(item["price"]),
 			 "사용 가능 현금 %s원" % _fmt(gs.spendable_cash()),
 			 "%s원이 부족해요." % _fmt(lack)])
