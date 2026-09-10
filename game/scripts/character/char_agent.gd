@@ -241,8 +241,9 @@ func _start_using() -> void:
 
 
 func _bubble_follow() -> void:
-	# 캐릭터 몸통 위쪽에 항상 위치 (누운 포즈 포함)
-	bubble_bg.position = Vector2(-bubble_bg.size.x * 0.5, -sprite.size.y - 36)
+	# 캐릭터 몸통 위쪽에 항상 위치 + 화면 상단(HUD)과 겹치지 않게 클램프
+	var by: float = -sprite.size.y - 36.0
+	bubble_bg.position = Vector2(-bubble_bg.size.x * 0.5, maxf(by, 150.0 - position.y))
 
 
 func _use_step(delta: float) -> void:
