@@ -194,6 +194,7 @@ func _process(delta: float) -> void:
 	if flow == null or not is_visible_in_tree():
 		return
 	bob_t += delta
+	flow._sort_with_agent()   # 이동/사용 중 y 변화를 z에 반영
 	match state:
 		"idle":
 			idle_timer -= delta

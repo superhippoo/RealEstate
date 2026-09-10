@@ -872,17 +872,16 @@ func _apply_placement_transform(node: TextureRect, p: GridModel.Placement) -> vo
 	if p.layer == GridModel.Layer.WALL:
 		node.position.y -= h * 0.55
 		node.position.y = maxf(node.position.y, 6.0)
-	node.set_meta("sort_y", anchor.y)
+	node.set_meta("sort_y", _img_to_screen(anchor).y)   # 화면 y로 통일 (캐릭터와 같은 단위)
 	node.flip_h = p.rotation == 90 or p.rotation == 270
 
 
 func _sort_furniture() -> void:
+	# 화가 기법 정렬 — 전부 화면 y 동일 단위로 비교 (캐릭터 포함)
 	var nodes: Array = []
 	for iid in placed_nodes:
 		nodes.append([placed_nodes[iid].get_meta("sort_y", 0.0), placed_nodes[iid]])
-	# 캐릭터는 현재 y 기준 함께 정렬
-	var agent_y: float = screen_to_cell(Vector2(agent.position.x, agent.position.y)).y
-	nodes.append([agent_y + 100.0, agent, true])
+	nodes.append([agent.position.y, agent])
 	nodes.sort_custom(func(a, b): return a[0] < b[0])
 	for i in nodes.size():
 		furniture_layer.move_child(nodes[i][1], i)
