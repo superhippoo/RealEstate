@@ -130,13 +130,13 @@ func _test_game_state() -> void:
 	print("
 --- 욕구/구매 (00§9) ---")
 	_check("욕구 5단계", GS.DESIRES.size() == 5)
-	var done: Dictionary = g.on_furniture_owned("bed_single")
+	var done: Dictionary = g.own_furniture("bed_single")
 	_check("침대→욕구1 완료", done.is_empty() == false and g.desire_index == 1)
-	g.on_furniture_owned("sofa_two")
+	g.own_furniture("sofa_two")
 	_check("소파→욕구2 완료", g.desire_index == 2)
-	g.on_furniture_owned("desk_small")
+	g.own_furniture("desk_small")
 	_check("부분 진행 미완료", g.desire_index == 2)
-	g.on_furniture_owned("chair_basic")
+	g.own_furniture("chair_basic")
 	_check("의자까지 완료", g.desire_index == 3)
 
 	print("
@@ -163,8 +163,12 @@ func _test_game_state() -> void:
 	g.move_to(GS.LISTINGS[3])
 	_check("이사 후 가구 전량 보관함", g.storage.size() == g.purchased.size())
 	_check("새 계약 24개월", g.contract_remaining == 24)
-	g.on_furniture_owned("bed_single")
-	_check("보관함→배치 시 storage 제거", not g.storage.has("bed_single"))
+	g.store_furniture("plant_monstera")
+	_check("보관함 넣기 → storage 추가", g.storage.has("plant_monstera"))
+	var d2: Dictionary = g.store_furniture("floor_lamp")
+	_check("보관 경로로도 욕구 진행", g.desire_index == 4)
+	g.place_stored("plant_monstera")
+	_check("보관함→배치 시 storage 제거", not g.storage.has("plant_monstera"))
 
 	print("
 --- 스탯 자연어 (07§4) ---")

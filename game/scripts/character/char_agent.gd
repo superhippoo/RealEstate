@@ -238,6 +238,7 @@ func _use_step(delta: float) -> void:
 		sprite.scale = Vector2(1.0, 0.94)
 	elif use_action.get("pose") == "lie":
 		sprite.rotation_degrees = lerp(sprite.rotation_degrees, 90.0, 0.1)
+		sprite.scale = Vector2(1.3, 1.3)   # 누운 포즈 가독성
 	else:
 		sprite.position.y = -sprite.size.y + sin(bob_t * 3.0) * 1.0
 	if use_timer <= 0:

@@ -34,6 +34,7 @@ var popup_body: VBoxContainer
 var agent: Node2D
 
 var placing: String = ""
+var placing_from_storage := false
 var place_origin := Vector2i(6, 5)
 var place_rotation := 0
 var ghost: TextureRect
@@ -163,11 +164,6 @@ func _build_ui() -> void:
 	toast.offset_top = -60; toast.offset_bottom = 10
 	add_child(toast)
 
-	# 플로팅 효과 텍스트 레이어
-	floaties = Control.new()
-	floaties.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(floaties)
-
 	_build_shop_panel()
 	_build_storage_panel()
 
@@ -191,6 +187,14 @@ func _build_ui() -> void:
 	popup_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	col.add_child(popup_title)
 	popup_body = col
+
+	# 패널들은 dim 위에, 플로팅/토스트는 그 위에 (피드백 가림 방지)
+	move_child(shop_panel, get_child_count() - 1)
+	move_child(storage_panel, get_child_count() - 1)
+	floaties = Control.new()
+	floaties.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(floaties)
+	move_child(toast, get_child_count() - 1)
 
 
 func _label(text: String, size: int, color := Color(0.35, 0.26, 0.18)) -> Label:
@@ -249,13 +253,12 @@ func _pill(bg_color: Color) -> StyleBoxFlat:
 func _build_shop_panel() -> void:
 	shop_panel = PanelContainer.new()
 	shop_panel.visible = false
-	shop_panel.set_anchors_preset(Control.PRESET_CENTER)
 	var sb := _pill(Color(0.99, 0.96, 0.90))
 	sb.content_margin_left = 20; sb.content_margin_right = 20
 	sb.content_margin_top = 14; sb.content_margin_bottom = 16
 	shop_panel.add_theme_stylebox_override("panel", sb)
-	shop_panel.offset_left = -620; shop_panel.offset_right = 620
-	shop_panel.offset_top = -235; shop_panel.offset_bottom = 235
+	shop_panel.position = Vector2(640 - 620, 125)
+	shop_panel.size = Vector2(1240, 470)
 
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 8)
@@ -326,13 +329,12 @@ func _mk_shop_card(fid: String, item: Dictionary) -> VBoxContainer:
 func _build_storage_panel() -> void:
 	storage_panel = PanelContainer.new()
 	storage_panel.visible = false
-	storage_panel.set_anchors_preset(Control.PRESET_CENTER)
 	var sb := _pill(Color(0.99, 0.96, 0.90))
 	sb.content_margin_left = 24; sb.content_margin_right = 24
 	sb.content_margin_top = 16; sb.content_margin_bottom = 16
 	storage_panel.add_theme_stylebox_override("panel", sb)
-	storage_panel.offset_left = -420; storage_panel.offset_right = 420
-	storage_panel.offset_top = -200; storage_panel.offset_bottom = 200
+	storage_panel.position = Vector2(640 - 420, 160)
+	storage_panel.size = Vector2(840, 400)
 	add_child(storage_panel)
 
 
@@ -352,7 +354,7 @@ func _open_storage() -> void:
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		col.add_child(empty)
 	else:
-		var info := _label("보관함은 전역 공용이며 무제한이에요 (09§4-5)", 14, Color(0.55, 0.44, 0.30))
+		var info := _label("보관함은 전역 공용이며 무제한이에요", 14, Color(0.55, 0.44, 0.30))
 		info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		col.add_child(info)
 		var row := HBoxContainer.new()
@@ -628,7 +630,7 @@ func _update_desire_panel() -> void:
 
 	var d: Dictionary = GameStateScript.DESIRES[gs.desire_index]
 	col.add_child(_label("지금 갖고 싶어요 (%d/%d)" % [gs.desire_index + 1, GameStateScript.DESIRES.size()], 18))
-	var line := _label(d["line"], 14)
+	var line := _label(d["line"], 16)
 	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	line.custom_minimum_size.x = 258
 	col.add_child(line)
@@ -651,6 +653,7 @@ func _item_layer(fid: String) -> int:
 
 func _start_placing(fid: String) -> void:
 	placing = fid
+	placing_from_storage = false
 	place_rotation = 0
 	var item: Dictionary = slots["items"][fid]
 	var fp := GridModel.footprint_size(item["grid"][0], item["grid"][1], 0)
@@ -666,7 +669,9 @@ func _start_placing(fid: String) -> void:
 
 
 func _start_placing_from_storage(fid: String) -> void:
+	gs.place_stored(fid)   # 배치 시작 시 보관함에서 꺼냄
 	placing = fid
+	placing_from_storage = true
 	place_rotation = 0
 	var item: Dictionary = slots["items"][fid]
 	var fp := GridModel.footprint_size(item["grid"][0], item["grid"][1], 0)
@@ -702,7 +707,7 @@ func _rotate_placing() -> void:
 func _store_placing() -> void:
 	# 05§16: [보관함에 넣기]
 	var fid := placing
-	var done: Dictionary = gs.on_furniture_owned(fid)
+	var done: Dictionary = gs.store_furniture(fid)
 	gs.save_game_with(_placements_list())
 	placing = ""
 	_show_toast("%s를 보관함에 넣었어요" % slots["items"][fid]["name"], 1.8)
@@ -714,10 +719,13 @@ func _store_placing() -> void:
 
 
 func _cancel_placing() -> void:
-	var item: Dictionary = slots["items"][placing]
-	gs.cash_balance += item["price"]
+	if placing_from_storage:
+		gs.storage.append(placing)   # 보관함 행：환불 없이 재보관
+		_show_toast("다시 보관함에 넣었어요", 1.5)
+	else:
+		gs.cash_balance += slots["items"][placing]["price"]
+		_show_toast("구매를 취소했어요 (환불 완료)", 1.8)
 	placing = ""
-	_show_toast("구매를 취소했어요 (환불 완료)", 1.8)
 	show_screen("room")
 
 
@@ -803,7 +811,7 @@ func _try_place_here(screen_pos: Vector2) -> void:
 	var node := _add_furniture_node(iid, placing)
 	_apply_placement_transform(node, grid.placements[iid])
 	_sort_furniture()
-	var done_desire: Dictionary = gs.on_furniture_owned(placing)
+	var done_desire: Dictionary = gs.own_furniture(placing)
 	var placed_fid := placing
 	placing = ""
 	overlay.visible = false
@@ -1000,7 +1008,7 @@ func _contract_expiry() -> void:
 	_open_popup("계약이 만료되었어요", [
 		"어떻게 할지 결정해야 해요. 결정하는 동안 시간은 멈춰요.",
 		"재계약: 월세 5% 인상 갱신 (24개월)",
-		"이사: 가구는 전부 보관함으로 → 새 집에서 다시 배치 (09§9)",
+		"이사: 가구는 전부 보관함으로 옮겨져 새 집에서 다시 배치해요",
 	])
 	var renew := _mk_button("재계약하기", Callable())
 	renew.pressed.connect(func(): _renew())

@@ -36,7 +36,7 @@ const LISTINGS := [
 		"rent": 700_000, "maintenance": 100_000, "commute": 50, "desc": "깔끔한 신축, 조금 비쌈"},
 	{"id": "guro_close", "name": "구로 직주근접 원룸", "region": "구로구", "size": "7평",
 		"rent": 650_000, "maintenance": 80_000, "commute": 15, "desc": "회사까지 15분, 작은 집"},
-	{"id": "mapo_nice", "name": "마포 한뷰 옥탑", "region": "마포구", "size": "10평",
+	{"id": "mapo_nice", "name": "마포 한강뷰 옥탑", "region": "마포구", "size": "10평",
 		"rent": 850_000, "maintenance": 60_000, "commute": 40, "desc": "넓고 감성적, 월세 높음"},
 ]
 
@@ -194,9 +194,9 @@ func desire_done(di: int = -1) -> bool:
 	return true
 
 
-func on_furniture_owned(fid: String) -> Dictionary:
+## 가구 소유 확정(배치 또는 보관) — 욕구 진행 처리. 완료된 욕구 반환
+func own_furniture(fid: String) -> Dictionary:
 	purchased[fid] = true
-	storage.erase(fid)
 	happiness = mini(100, happiness + 2)
 	if desire_done() and desire_index < DESIRES.size():
 		var d: Dictionary = DESIRES[desire_index]
@@ -207,6 +207,19 @@ func on_furniture_owned(fid: String) -> Dictionary:
 			goal_done = true
 		return d
 	return {}
+
+
+## 보관함에 넣기 (05§16)
+func store_furniture(fid: String) -> Dictionary:
+	var done := own_furniture(fid)
+	if not storage.has(fid):
+		storage.append(fid)
+	return done
+
+
+## 보관함에서 배치 확정
+func place_stored(fid: String) -> void:
+	storage.erase(fid)
 
 
 # ---------------------------------------------------------------- 만족도 (07§8)
