@@ -38,6 +38,7 @@ var path: Array[Vector2i] = []
 var path_idx := 0
 var use_action: Dictionary = {}
 var use_target_fid := ""
+var use_iid := -1
 var use_timer := 0.0
 var recent_actions: Array[String] = []
 var force_fid := ""                   # 새로 배치한 가구 즉시 사용
@@ -80,6 +81,7 @@ func _resize(w: float) -> void:
 	var h: float = w * tex_idle.get_height() / tex_idle.get_width()
 	sprite.size = Vector2(w, h)
 	sprite.position = Vector2(-w * 0.5, -h)   # 발 중심 앵커
+	sprite.pivot_offset = sprite.size * 0.5   # 회전은 스프라이트 중심 기준
 
 
 func place_at_cell(cell: Vector2i) -> void:
@@ -224,6 +226,12 @@ func _start_using() -> void:
 	state = "using"
 	sprite.texture = tex_idle
 	sprite.position.y = -sprite.size.y
+	# 누운 포즈(침대): 가구 중앙에 몸이 얹히도록 위치 보정
+	if use_action.get("pose") == "lie" and use_iid >= 0 and flow.grid.placements.has(use_iid):
+		var center: Vector2 = flow.furniture_center_screen(use_iid)
+		# 중심 피벗 회전: 몸통 중심(발점에서 -h/2 위)이 침대 중앙에 오도록
+		var hh: float = sprite.size.y
+		position = center + Vector2(6, hh * 0.5 - 14)
 	use_timer = float(use_action["dur"])
 	bubble.text = use_action["label"]
 	bubble_bg.visible = true
@@ -243,7 +251,7 @@ func _use_step(delta: float) -> void:
 	if use_action.get("pose") == "sit":
 		sprite.scale = Vector2(1.0, 0.94)
 	elif use_action.get("pose") == "lie":
-		sprite.rotation_degrees = lerp(sprite.rotation_degrees, 90.0, 0.1)
+		sprite.rotation_degrees = lerp(sprite.rotation_degrees, 90.0, 0.25)
 		sprite.scale = Vector2(1.3, 1.3)   # 누운 포즈 가독성
 	else:
 		sprite.position.y = -sprite.size.y + sin(bob_t * 3.0) * 1.0
@@ -284,4 +292,5 @@ func _begin_next_action() -> void:
 		return
 	use_action = ACTIONS[pick["action"]].duplicate()
 	use_target_fid = pick["fid"]
+	use_iid = int(pick["iid"])
 	_walk_to(pick["cell"])

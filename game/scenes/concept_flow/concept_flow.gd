@@ -68,6 +68,7 @@ func _process(delta: float) -> void:
 # ================================================================ UI 구성
 func _build_ui() -> void:
 	bg = TextureRect.new()
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	bg.gui_input.connect(_on_bg_input)
@@ -562,6 +563,13 @@ func char_width_px() -> float:
 
 func furniture_action(fid: String) -> String:
 	return str(slots["items"][fid].get("action", ""))
+
+
+## 가구 footprint 중심 화면좌표 (누운 포즈용)
+func furniture_center_screen(iid: int) -> Vector2:
+	var p: GridModel.Placement = grid.placements[iid]
+	var fp := GridModel.footprint_size(p.def_w, p.def_h, p.rotation)
+	return grid_to_screen(Vector2i(p.origin.x + fp.x / 2, p.origin.y + fp.y / 2))
 
 
 ## 가구 인스턴스의 상호작용 셀 (06§13) — 도달 가능한 것 우선
