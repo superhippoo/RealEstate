@@ -14,7 +14,10 @@ from PIL import Image, ImageFilter, ImageDraw
 import numpy as np
 import json, os
 
-SRC = r'D:/works/realestate/review/gpt_batch'
+# 소스 우선순위: incoming/ (git 업로드용) → review/gpt_batch (로컬 드롭)
+import os as _os
+_CAND = [r'D:/works/realestate/incoming', r'D:/works/realestate/review/gpt_batch']
+SRC = next((d for d in _CAND if _os.path.isdir(d) and any(f.endswith('.png') for f in _os.listdir(d))), _CAND[-1])
 OUT = r'D:/works/realestate/game/assets/gpt_sprites'
 os.makedirs(OUT, exist_ok=True)
 
