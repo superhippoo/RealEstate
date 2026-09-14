@@ -34,6 +34,9 @@ var bubble: Label
 var bubble_bg: PanelContainer
 
 var state := "idle"                   # idle / walking / using
+var step_t := 0.0                     # 스텝 애니메이션 타이머
+var walk_frame := false               # true=걷기폰(다리벌림) false=기립(다리모음)
+const STEP_INTERVAL := 0.14           # 스텝 주기(초)
 var path: Array[Vector2i] = []
 var path_idx := 0
 var use_action: Dictionary = {}
@@ -186,6 +189,8 @@ func _walk_to(cell: Vector2i) -> bool:
 		path.append(c)
 	path_idx = 0
 	state = "walking"
+	step_t = 0.0
+	walk_frame = true
 	sprite.texture = tex_walk
 	return true
 
@@ -220,11 +225,18 @@ func _walk_step(delta: float) -> void:
 	var dir := (target - position) / d
 	position += dir * speed * delta
 	sprite.flip_h = dir.x < 0
-	sprite.position.y = -sprite.size.y + sin(bob_t * 12.0) * 2.5   # 걷기 바운스
+	# 2프레임 스텝: 걷기폰(다리벌림) ↔ 기립(다리모음) 교대 + 스텝마다 살짝 점프
+	step_t += delta
+	if step_t >= STEP_INTERVAL:
+		step_t -= STEP_INTERVAL
+		walk_frame = not walk_frame
+	sprite.texture = tex_walk if walk_frame else tex_idle
+	sprite.position.y = -sprite.size.y - (3.0 if walk_frame else 0.0)
 
 
 func _start_using() -> void:
 	state = "using"
+	walk_frame = false
 	sprite.texture = tex_idle
 	sprite.position.y = -sprite.size.y
 	# 누운 포즈(침대): 실제 렌더된 가구 스프라이트 rect 중앙에 몸이 얹히도록
