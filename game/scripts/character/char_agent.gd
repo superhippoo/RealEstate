@@ -137,6 +137,8 @@ func notify_new_furniture(fid: String) -> void:
 	force_fid = fid
 	if state == "idle":
 		_begin_next_action()
+	elif state == "walking" and use_action.get("action") == "LOOK":
+		_begin_next_action()   # 배회 중이라면 새 가구 사용으로 즉시 전환
 
 
 # ---------------------------------------------------------------- 행동 선택 (07§11 가중치)
@@ -294,23 +296,26 @@ func _use_step(delta: float) -> void:
 
 
 func _finish_using() -> void:
-	_apply_texture(tex_idle)
-	sprite.scale = Vector2.ONE
-	sprite.rotation_degrees = 0.0
-	bubble_bg.visible = false
 	var eff: Dictionary = {
 		"energy": int(use_action.get("energy", 0)),
 		"stress": int(use_action.get("stress", 0)),
 		"happiness": int(use_action.get("happiness", 0)),
 	}
-	action_finished.emit(eff)
-	recent_actions.append(use_action["action"])
-	if recent_actions.size() > 3:
-		recent_actions.pop_front()
+	var act_name := str(use_action.get("action", ""))
+	# 상태 복구를 최우선: 이후 처리에서 에러가 나도 캐릭터가 using에 갇히지 않게
+	_apply_texture(tex_idle)
+	sprite.scale = Vector2.ONE
+	sprite.rotation_degrees = 0.0
+	bubble_bg.visible = false
 	use_target_fid = ""
 	use_action = {}
 	state = "idle"
 	idle_timer = 1.2
+	action_finished.emit(eff)
+	if not act_name.is_empty():
+		recent_actions.append(act_name)
+		if recent_actions.size() > 3:
+			recent_actions.pop_front()
 
 
 func _begin_next_action() -> void:
@@ -322,10 +327,12 @@ func _begin_next_action() -> void:
 			var cell := Vector2i(randi() % flow.grid.width, randi() % flow.grid.height)
 			if not astar.is_point_solid(cell):
 				use_action = ACTIONS["LOOK"].duplicate()
+				use_action["action"] = "LOOK"   # _finish_using의 recent_actions 기록용
 				use_target_fid = ""
 				_walk_to(cell)
 		return
 	use_action = ACTIONS[pick["action"]].duplicate()
+	use_action["action"] = pick["action"]   # ACTIONS 항목엔 이 키가 없으므로 명시 저장
 	use_target_fid = pick["fid"]
 	use_iid = int(pick["iid"])
 	_walk_to(pick["cell"])

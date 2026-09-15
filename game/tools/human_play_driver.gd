@@ -143,8 +143,10 @@ func _run() -> void:
 		t += 1.0 / 60.0
 		if flow.agent.get("state") == "using":
 			break
-	_p("S12", "캐릭터 사용 상태=%s tex=%s" % [flow.agent.get("state"),
-			flow.agent.sprite.texture.resource_path.get_file() if flow.agent.sprite.texture else "none"])
+	_p("S12", "캐릭터 사용 상태=%s tex=%s pose=%s label=%s tex_lie=%s" % [flow.agent.get("state"),
+			flow.agent.sprite.texture.resource_path.get_file() if flow.agent.sprite.texture else "none",
+			flow.agent.use_action.get("pose"), flow.agent.use_action.get("label"),
+			flow.agent.tex_lie.resource_path.get_file() if flow.agent.tex_lie else "null"])
 	var img := get_root().get_texture().get_image()
 	img.save_png("res://../review/human_play_result.png")
 	_p("DONE", "전 시나리오 완료")

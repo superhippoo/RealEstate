@@ -46,6 +46,8 @@ var floaties: Control
 var slots: Dictionary = {}
 var font: FontFile
 var time_running := false
+var popup_opened_ms := 0            # 팝업 직후 스친 클릭 방지(클릭 통과 확인 방지)용
+var restore_panel_after_settle := ""  # 정산 팝업 뒤에 그대로 둘 패널(shop/storage)
 
 
 func _ready() -> void:
@@ -192,6 +194,8 @@ func _build_ui() -> void:
 	# 패널들은 dim 위에, 플로팅/토스트는 그 위에 (피드백 가림 방지)
 	move_child(shop_panel, get_child_count() - 1)
 	move_child(storage_panel, get_child_count() - 1)
+	# 정산 팝업은 상점/보관함 위에 떠야 한다 (세션을 닫지 않고 겹쳐 보여줌)
+	move_child(popup, get_child_count() - 1)
 	floaties = Control.new()
 	floaties.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(floaties)
@@ -258,8 +262,8 @@ func _build_shop_panel() -> void:
 	sb.content_margin_left = 20; sb.content_margin_right = 20
 	sb.content_margin_top = 14; sb.content_margin_bottom = 16
 	shop_panel.add_theme_stylebox_override("panel", sb)
-	shop_panel.position = Vector2(640 - 620, 125)
-	shop_panel.size = Vector2(1240, 470)
+	shop_panel.position = Vector2(640 - 620, 105)
+	shop_panel.size = Vector2(1240, 500)
 
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 8)
@@ -274,9 +278,11 @@ func _build_shop_panel() -> void:
 	col.add_child(cash_line)
 	shop_cash_label = cash_line
 
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	var row := GridContainer.new()
+	row.columns = 7
+	row.add_theme_constant_override("h_separation", 8)
+	row.add_theme_constant_override("v_separation", 10)
+	row.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	col.add_child(row)
 
 	for fid in slots["items"]:
@@ -294,23 +300,23 @@ func _mk_shop_card(fid: String, item: Dictionary) -> VBoxContainer:
 
 	var img := TextureRect.new()
 	img.texture = load(item["sprite"])
-	img.custom_minimum_size = Vector2(92, 104)
+	img.custom_minimum_size = Vector2(92, 88)
 	img.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	img.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	card.add_child(img)
 
-	var name_l := _label(item["name"], 15)
+	var name_l := _label(item["name"], 14)
 	name_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card.add_child(name_l)
 
-	var price_l := _label("%s원" % _fmt(item["price"]), 13, Color(0.55, 0.44, 0.30))
+	var price_l := _label("%s원" % _fmt(item["price"]), 14, Color(0.42, 0.30, 0.15))
 	price_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	card.add_child(price_l)
 
 	var buy := Button.new()
 	buy.text = "구매"
-	buy.custom_minimum_size = Vector2(92, 40)
-	buy.pivot_offset = Vector2(46, 20)
+	buy.custom_minimum_size = Vector2(92, 38)
+	buy.pivot_offset = Vector2(46, 19)
 	buy.add_theme_font_override("font", font)
 	buy.add_theme_font_size_override("font_size", 17)
 	buy.add_theme_color_override("font_color", Color(1, 1, 0.98))
@@ -781,11 +787,13 @@ func _update_ghost() -> void:
 
 
 func _on_bg_input(event: InputEvent) -> void:
+	# gui_input의 event.position은 bg 로컬 좌표 — 화면 좌표로 변환해서 써야 한다
+	# (bg는 중앙정렬 여백이 있어 로컬≠화면; 과거 고스트가 커서에서 좌상단으로 떠 있던 원인)
 	if event is InputEventMouseMotion and not placing.is_empty():
-		_ghost_follow(event.position)
+		_ghost_follow(bg.get_global_rect().position + event.position)
 	elif event is InputEventMouseButton and event.pressed:
 		if not placing.is_empty():
-			_try_place_here(event.position)
+			_try_place_here(bg.get_global_rect().position + event.position)
 
 
 func _ghost_follow(screen_pos: Vector2) -> void:
@@ -984,6 +992,9 @@ func _on_month_boundary() -> void:
 	time_running = false
 	var r: Dictionary = gs.settle_month()
 	var ev: Dictionary = r.get("event", {})
+	# 상점/보관함을 보는 중이라면 세션을 닫지 않고 팝업만 위에 겹친다 (04§2.3: 쇼핑 중에도 시간은 흐름)
+	restore_panel_after_settle = "shop" if shop_panel.visible else (
+		"storage" if storage_panel.visible else "")
 	var lines: Array = [
 		"— %d월 정산 —" % r["month"],
 		"월급 +%s원 · 지출 -%s원 (월세·관리비 %s + 생활비 1,300,000)" % [
@@ -992,13 +1003,19 @@ func _on_month_boundary() -> void:
 	if r["sidejob"] > 0:
 		lines.append("부업 수입 +%s원" % _fmt(r["sidejob"]))
 	if not ev.is_empty():
-		lines.append("이번 달: %s" % ev["text"])
+		var ec := int(ev.get("cash", 0))
+		if ec != 0:
+			lines.append("이번 달: %s (%s%s원)" % [ev["text"],
+				"+" if ec > 0 else "-", _fmt(abs(ec))])
+		else:
+			lines.append("이번 달: %s" % ev["text"])
 	lines.append("체력 %d(%s) · 스트레스 %d(%s) · 행복 %d(%s)" % [
 			r["energy"], GameStateScript.energy_label(r["energy"]),
 			r["stress"], GameStateScript.stress_label(r["stress"]),
 			r["happiness"], GameStateScript.happiness_label(r["happiness"])])
 	lines.append("보유 %s원 · 사용 가능 %s원" % [_fmt(gs.cash_balance), _fmt(gs.spendable_cash())])
-	_open_popup("%d월이 되었어요" % r["month"], lines)
+	_open_popup("%d월이 되었어요" % r["month"], lines,
+		restore_panel_after_settle != "")
 	var ok := _mk_button("확인", Callable())
 	ok.pressed.connect(func(): _after_settle())
 	ok.custom_minimum_size = Vector2(300, 56)
@@ -1013,11 +1030,27 @@ func _on_month_boundary() -> void:
 
 
 func _after_settle() -> void:
+	# 팝업이 뜬 직후 스친 클릭(카드/바닥 클릭의 잔탄)이 정산을 몰래 넘기지 않게 한다
+	if Time.get_ticks_msec() - popup_opened_ms < 350:
+		return
 	_close_all_popups()
 	if gs.contract_remaining <= 0:
 		_contract_expiry()
 	else:
 		time_running = true
+		match restore_panel_after_settle:
+			"shop":
+				_open_shop()
+			"storage":
+				_open_storage()
+		restore_panel_after_settle = ""
+
+
+## 안내 팝업(소원 달성 등) 확인 — 같은 클릭 가드 적용
+func _confirm_info_popup() -> void:
+	if Time.get_ticks_msec() - popup_opened_ms < 350:
+		return
+	_close_all_popups()
 
 
 # ---------------------------------------------------------------- 계약 만료 (04§14)
@@ -1101,8 +1134,7 @@ func _desire_celebration(d: Dictionary) -> void:
 		"행복이 크게 올랐어요. 방이 점점 좋아지고 있어요.",
 		"캐릭터가 새 가구를 사용하기 시작했어요!",
 	])
-	var ok := _mk_button("좋아!", Callable())
-	ok.pressed.connect(func(): _close_all_popups(); time_running = true)
+	var ok := _mk_button("좋아!", Callable(self, "_confirm_info_popup"))
 	ok.custom_minimum_size = Vector2(300, 56)
 	popup_body.add_child(ok)
 	if gs.goal_done:
@@ -1115,14 +1147,13 @@ func _show_goal() -> void:
 		"체력 %d · 스트레스 %d · 행복 %d" % [gs.energy, gs.stress, gs.happiness],
 		"계약 만료 시 더 좋은 집으로 이사할 수 있어요.",
 	])
-	var keep := _mk_button("계속 꾸미기", Callable())
-	keep.pressed.connect(func(): _close_all_popups(); time_running = true)
+	var keep := _mk_button("계속 꾸미기", Callable(self, "_confirm_info_popup"))
 	keep.custom_minimum_size = Vector2(420, 56)
 	popup_body.add_child(keep)
 
 
 # ================================================================ 팝업/피드백
-func _open_popup(title_text: String, lines: Array) -> void:
+func _open_popup(title_text: String, lines: Array, keep_panels := false) -> void:
 	toast.visible = false
 	popup_title.text = title_text
 	for c in popup_body.get_children():
@@ -1137,7 +1168,16 @@ func _open_popup(title_text: String, lines: Array) -> void:
 	_close_all_popups()
 	dim.visible = true
 	popup.visible = true
+	if keep_panels:
+		match restore_panel_after_settle:
+			"shop":
+				shop_panel.visible = true
+			"storage":
+				storage_panel.visible = true
+	else:
+		restore_panel_after_settle = ""
 	time_running = false
+	popup_opened_ms = Time.get_ticks_msec()
 
 
 func _close_all_popups() -> void:
