@@ -28,6 +28,7 @@ var shop_panel: PanelContainer
 var shop_cash_label: Label
 var storage_panel: PanelContainer
 var dim: ColorRect
+var rotate_hint: ColorRect
 var popup: PanelContainer
 var popup_title: Label
 var popup_body: VBoxContainer
@@ -62,9 +63,31 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	# 세로 화면(모바일 정자세) 안내 — 가로 설계 게임이 잘리지 않게
+	var vp_size := get_viewport_rect().size
+	var portrait := vp_size.x < vp_size.y * 0.9
+	if portrait != rotate_hint.visible:
+		rotate_hint.visible = portrait
+		if portrait:
+			time_running = false
+			_close_all_popups()
+	# 와치독: 어떤 모달도 보이지 않는데 입력이 잠겨있으면 스스로 복구 (soft-lock 방지)
+	if dim.visible and not popup.visible and not shop_panel.visible \
+			and not storage_panel.visible and placing.is_empty() and not portrait:
+		_watchdog_ms += int(delta * 1000.0)
+		if _watchdog_ms > 1000:
+			_watchdog_ms = 0
+			dim.visible = false
+			time_running = state == "room"
+			_show_toast("화면이 잠깐 멈췄어요 — 다시 시도해 주세요", 1.5)
+	else:
+		_watchdog_ms = 0
 	if time_running and state == "room":
 		if gs.tick(delta):
 			_on_month_boundary()
+
+
+var _watchdog_ms := 0
 
 
 # ================================================================ UI 구성
@@ -200,6 +223,27 @@ func _build_ui() -> void:
 	floaties.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(floaties)
 	move_child(toast, get_child_count() - 1)
+
+	# 세로 화면 안내 오버레이 (최상위, 입력 차단) — 모바일 정자세 대응
+	rotate_hint = ColorRect.new()
+	rotate_hint.color = Color(0.13, 0.11, 0.09, 0.97)
+	rotate_hint.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rotate_hint.mouse_filter = Control.MOUSE_FILTER_STOP
+	rotate_hint.visible = false
+	add_child(rotate_hint)
+	var rh_col := VBoxContainer.new()
+	rh_col.set_anchors_preset(Control.PRESET_CENTER)
+	rh_col.add_theme_constant_override("separation", 14)
+	rotate_hint.add_child(rh_col)
+	var rh_icon := _label("📱↻", 84)
+	rh_icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rh_col.add_child(rh_icon)
+	var rh_t := _label("기기를 가로로 회전해 주세요", 30)
+	rh_t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rh_col.add_child(rh_t)
+	var rh_s := _label("이 게임은 가로 화면으로 플레이해요", 18, Color(0.72, 0.66, 0.55))
+	rh_s.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	rh_col.add_child(rh_s)
 
 
 func _label(text: String, size: int, color := Color(0.35, 0.26, 0.18)) -> Label:
@@ -390,6 +434,7 @@ func _open_storage() -> void:
 	col.add_child(close)
 	dim.visible = true
 	storage_panel.visible = true
+	storage_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 
 
 # ================================================================ 화면 전환
@@ -716,6 +761,7 @@ func _rotate_placing() -> void:
 	place_rotation = (place_rotation + 90) % 360
 	ghost.flip_h = place_rotation == 90 or place_rotation == 270
 	_update_ghost()
+	_show_toast("%d도 회전했어요" % place_rotation, 0.8)
 
 
 func _store_placing() -> void:
@@ -918,6 +964,7 @@ func _open_shop() -> void:
 	_close_all_popups()
 	dim.visible = true
 	shop_panel.visible = true
+	shop_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 
 
 func _try_buy(fid: String, buy_btn: Button = null) -> void:
@@ -1179,6 +1226,9 @@ func _open_popup(title_text: String, lines: Array, keep_panels := false) -> void
 				shop_panel.visible = true
 			"storage":
 				storage_panel.visible = true
+		# 팝업이 열려 있는 동안 뒤 상점/보관함 카드 클릭 차단 (정산 확인 우회 방지)
+		shop_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		storage_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	else:
 		restore_panel_after_settle = ""
 	time_running = false

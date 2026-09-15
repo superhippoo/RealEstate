@@ -47,6 +47,7 @@ var use_action: Dictionary = {}
 var use_target_fid := ""
 var use_iid := -1
 var use_timer := 0.0
+var use_base_sprite_y := 0.0
 var recent_actions: Array[String] = []
 var force_fid := ""                   # 새로 배치한 가구 즉시 사용
 var idle_timer := 1.0
@@ -276,6 +277,7 @@ func _start_using() -> void:
 	use_timer = float(use_action["dur"])
 	bubble.text = use_action["label"]
 	bubble_bg.visible = true
+	use_base_sprite_y = sprite.position.y
 	_bubble_follow()
 	action_started.emit(use_action["label"])
 
@@ -289,8 +291,8 @@ func _bubble_follow() -> void:
 func _use_step(delta: float) -> void:
 	use_timer -= delta
 	_bubble_follow()
-	# 사용 중 미세 호흡
-	sprite.position.y += sin(bob_t * 3.0) * 0.15
+	# 사용 중 호흡 — 기준 높이에서 절대값 진동(눈에 보이는 폭, 드리프트 없음)
+	sprite.position.y = use_base_sprite_y + sin(bob_t * 3.0) * 1.6
 	if use_timer <= 0:
 		_finish_using()
 
