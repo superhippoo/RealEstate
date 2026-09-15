@@ -776,7 +776,7 @@ func _update_ghost() -> void:
 	var w := wpx * sc
 	var h := w * ghost.texture.get_height() / ghost.texture.get_width()
 	ghost.size = Vector2(w, h)
-	ghost.position = scr - Vector2(w * 0.5, h - 12.0 * sc)
+	ghost.position = scr - Vector2(w * 0.5, h - GROUND_LIFT_IMG_PX * sc)
 	ghost.modulate = Color(0.5, 1.0, 0.5, 0.85) if ok else Color(1.0, 0.35, 0.3, 0.85)
 	if item["layer"] == "wall":
 		ghost.position.y -= h * 0.55
@@ -866,6 +866,11 @@ func _placements_list() -> Array:
 	return out
 
 
+## 가구 착지 보정(이미지 px): 스프라이트 하단을 발판 앞변에서 얼마나 들어올릴까.
+## 12였으나 바닥에서 떠 보이는 갭의 원인 — 0(밀착)으로 캘리브레이션됨.
+const GROUND_LIFT_IMG_PX := 0.0
+
+
 func _apply_placement_transform(node: TextureRect, p: GridModel.Placement) -> void:
 	var fp := GridModel.footprint_size(p.def_w, p.def_h, p.rotation)
 	var anchor := FloorProjector.footprint_front_center(p.origin, fp.x, fp.y)
@@ -876,7 +881,7 @@ func _apply_placement_transform(node: TextureRect, p: GridModel.Placement) -> vo
 	var w := wpx * sc
 	var h := w * node.texture.get_height() / node.texture.get_width()
 	node.size = Vector2(w, h)
-	node.position = _img_to_screen(anchor) - Vector2(w * 0.5, h - 12.0 * sc)
+	node.position = _img_to_screen(anchor) - Vector2(w * 0.5, h - GROUND_LIFT_IMG_PX * sc)
 	if p.layer == GridModel.Layer.WALL:
 		node.position.y -= h * 0.55
 		node.position.y = maxf(node.position.y, 6.0)
