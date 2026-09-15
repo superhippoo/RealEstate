@@ -29,6 +29,7 @@ var shop_cash_label: Label
 var storage_panel: PanelContainer
 var dim: ColorRect
 var rotate_hint: ColorRect
+var sidejob_btn: Button
 var popup: PanelContainer
 var popup_title: Label
 var popup_body: VBoxContainer
@@ -157,7 +158,8 @@ func _build_ui() -> void:
 	bottom_bar.add_child(bl)
 	bottom_bar.add_child(_mk_button("가구 상점", Callable(self, "_open_shop")))
 	bottom_bar.add_child(_mk_button("보관함", Callable(self, "_open_storage")))
-	bottom_bar.add_child(_mk_button("부업", Callable(self, "_open_sidejob")))
+	sidejob_btn = _mk_button("부업", Callable(self, "_open_sidejob"))
+	bottom_bar.add_child(sidejob_btn)
 	add_child(bottom_bar)
 
 	# 배치 모드 버튼
@@ -672,6 +674,8 @@ func _update_hud() -> void:
 	hud.move_child(month_bar, 3)
 	month_bar.max_value = GameStateScript.MONTH_SECONDS
 	month_bar.value = gs.month_seconds
+	if sidejob_btn != null:
+		sidejob_btn.text = "부업 (%d/%d회)" % [gs.sidejobs_used, gs.sidejob_max()]
 
 
 func _update_desire_panel() -> void:
@@ -761,7 +765,7 @@ func _rotate_placing() -> void:
 	place_rotation = (place_rotation + 90) % 360
 	ghost.flip_h = place_rotation == 90 or place_rotation == 270
 	_update_ghost()
-	_show_toast("%d도 회전했어요" % place_rotation, 0.8)
+	_show_toast("%d도 회전했어요" % place_rotation, 1.2)
 
 
 func _store_placing() -> void:

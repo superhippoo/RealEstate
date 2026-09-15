@@ -37,6 +37,16 @@ func _find_button(parent: Node, text: String) -> Button:
 	return null
 
 
+func _find_button_prefix(parent: Node, prefix: String) -> Button:
+	if parent is Button and (parent as Button).text.begins_with(prefix):
+		return parent
+	for c in parent.get_children():
+		var found := _find_button_prefix(c, prefix)
+		if found:
+			return found
+	return null
+
+
 func _find_by_child_text(parent: Node, text_part: String) -> Button:
 	if parent is Button:
 		for c in (parent as Button).get_children():
@@ -185,8 +195,8 @@ func _run() -> void:
 		await _click_node(wait_btn)
 		await _frames(3)
 
-	# ===== 부업: 하단 [부업] → 시작 → 보상 → 그만두기 (QA S9 이어서) =====
-	var sj_open := _find_button(flow, "부업")
+	# ===== 부업: 하단 [부업 (N/6회)] → 시작 → 보상 → 그만두기 (QA S9 이어서) =====
+	var sj_open := _find_button_prefix(flow, "부업")
 	if sj_open:
 		await _click_node(sj_open)
 		await _frames(3)
