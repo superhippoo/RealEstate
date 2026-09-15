@@ -1,248 +1,268 @@
 {
-  "version": 2,
-  "furniture": [
-    {
-      "id": "bed_single",
-      "name": "싱글 침대",
-      "price": 800000,
-      "grid_w": 4,
-      "grid_h": 8,
-      "layer": "FLOOR",
-      "action": "SLEEP",
-      "interaction_locals": [
-        [
-          -1,
-          2
-        ],
-        [
-          -1,
-          5
-        ]
-      ],
-      "interaction_label": "자기",
-      "model": "bed_single"
-    },
-    {
-      "id": "sofa_two",
-      "name": "2인 소파",
-      "price": 1200000,
-      "grid_w": 6,
-      "grid_h": 3,
-      "layer": "FLOOR",
-      "action": "REST",
-      "interaction_locals": [
-        [
-          2,
-          3
-        ],
-        [
-          3,
-          3
-        ]
-      ],
-      "interaction_label": "앉기",
-      "model": "sofa_two"
-    },
-    {
-      "id": "desk_small",
-      "name": "책상",
-      "price": 400000,
-      "grid_w": 5,
-      "grid_h": 2,
-      "layer": "FLOOR",
-      "action": "STUDY",
-      "interaction_locals": [
-        [
-          2,
-          2
-        ]
-      ],
-      "interaction_label": "책상에 앉기",
-      "model": "desk_table"
-    },
-    {
-      "id": "chair_basic",
-      "name": "의자",
-      "price": 150000,
-      "grid_w": 2,
-      "grid_h": 2,
-      "layer": "FLOOR",
-      "action": "SIT",
-      "interaction_locals": [
-        [
-          0,
-          2
-        ],
-        [
-          1,
-          2
-        ]
-      ],
-      "interaction_label": "앉기",
-      "model": "chair_basic"
-    },
-    {
-      "id": "tv_43",
-      "name": "43인치 TV",
-      "price": 2900000,
-      "grid_w": 4,
-      "grid_h": 2,
-      "layer": "FLOOR",
-      "action": "WATCH_TV",
-      "interaction_locals": [
-        [
-          0,
-          4
-        ],
-        [
-          1,
-          4
-        ],
-        [
-          2,
-          4
-        ],
-        [
-          3,
-          4
-        ]
-      ],
-      "interaction_label": "TV 보기",
-      "model": ""
-    },
-    {
-      "id": "rug_oval",
-      "name": "타원 러그",
-      "price": 350000,
-      "grid_w": 6,
-      "grid_h": 4,
-      "layer": "UNDERLAY",
-      "action": "LOOK",
-      "interaction_locals": [
-        [
-          0,
-          4
-        ],
-        [
-          5,
-          4
-        ]
-      ],
-      "interaction_label": "러그 위에 앉기",
-      "model": ""
-    },
-    {
-      "id": "plant_monstera",
-      "name": "화분 식물",
-      "price": 80000,
-      "grid_w": 2,
-      "grid_h": 2,
-      "layer": "FLOOR",
-      "action": "LOOK",
-      "interaction_locals": [
-        [
-          0,
-          2
-        ],
-        [
-          1,
-          2
-        ]
-      ],
-      "interaction_label": "물 주기",
-      "model": "plant_monstera"
-    },
-    {
-      "id": "floor_lamp",
-      "name": "플로어 램프",
-      "price": 250000,
-      "grid_w": 2,
-      "grid_h": 2,
-      "layer": "FLOOR",
-      "action": "LOOK",
-      "interaction_locals": [
-        [
-          0,
-          2
-        ],
-        [
-          1,
-          2
-        ]
-      ],
-      "interaction_label": "불 켜기",
-      "model": "floor_lamp"
-    },
-    {
-      "id": "side_table",
-      "name": "사이드 테이블",
-      "price": 220000,
-      "grid_w": 2,
-      "grid_h": 2,
-      "layer": "FLOOR",
-      "action": "LOOK",
-      "interaction_locals": [
-        [
-          0,
-          2
-        ],
-        [
-          1,
-          2
-        ]
-      ],
-      "interaction_label": "커피 마시기",
-      "model": ""
-    },
-    {
-      "id": "picture_frame",
-      "name": "벽 액자",
-      "price": 120000,
-      "grid_w": 2,
-      "grid_h": 2,
-      "layer": "WALL",
-      "action": "LOOK",
-      "interaction_locals": [
-        [
-          0,
-          2
-        ],
-        [
-          1,
-          2
-        ]
-      ],
-      "interaction_label": "그림 감상",
-      "model": ""
-    },
-    {
-      "id": "wall_shelf",
-      "name": "벽 선반",
-      "price": 180000,
-      "grid_w": 4,
-      "grid_h": 1,
-      "layer": "WALL",
-      "action": "LOOK",
-      "interaction_locals": [
-        [
-          0,
-          1
-        ],
-        [
-          1,
-          1
-        ],
-        [
-          2,
-          1
-        ],
-        [
-          3,
-          1
-        ]
-      ],
-      "interaction_label": "선반 정리",
-      "model": ""
-    }
-  ]
+ "version": 2,
+ "furniture": [
+  {
+   "id": "bed_single",
+   "name": "싱글 침대",
+   "price": 800000,
+   "grid_w": 4,
+   "grid_h": 8,
+   "layer": "FLOOR",
+   "action": "SLEEP",
+   "interaction_locals": [
+    [
+     -1,
+     2
+    ],
+    [
+     -1,
+     5
+    ]
+   ],
+   "interaction_label": "자기",
+   "model": "bed_single"
+  },
+  {
+   "id": "sofa_two",
+   "name": "2인 소파",
+   "price": 1200000,
+   "grid_w": 6,
+   "grid_h": 3,
+   "layer": "FLOOR",
+   "action": "REST",
+   "interaction_locals": [
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     3
+    ]
+   ],
+   "interaction_label": "앉기",
+   "model": "sofa_two"
+  },
+  {
+   "id": "desk_small",
+   "name": "책상",
+   "price": 400000,
+   "grid_w": 5,
+   "grid_h": 2,
+   "layer": "FLOOR",
+   "action": "STUDY",
+   "interaction_locals": [
+    [
+     2,
+     2
+    ]
+   ],
+   "interaction_label": "책상에 앉기",
+   "model": "desk_table"
+  },
+  {
+   "id": "chair_basic",
+   "name": "의자",
+   "price": 150000,
+   "grid_w": 2,
+   "grid_h": 2,
+   "layer": "FLOOR",
+   "action": "SIT",
+   "interaction_locals": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "interaction_label": "앉기",
+   "model": "chair_basic"
+  },
+  {
+   "id": "tv_43",
+   "name": "43인치 TV",
+   "price": 2900000,
+   "grid_w": 4,
+   "grid_h": 2,
+   "layer": "FLOOR",
+   "action": "WATCH_TV",
+   "interaction_locals": [
+    [
+     0,
+     4
+    ],
+    [
+     1,
+     4
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     3,
+     4
+    ]
+   ],
+   "interaction_label": "TV 보기",
+   "model": ""
+  },
+  {
+   "id": "rug_oval",
+   "name": "타원 러그",
+   "price": 350000,
+   "grid_w": 6,
+   "grid_h": 4,
+   "layer": "UNDERLAY",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     4
+    ],
+    [
+     5,
+     4
+    ]
+   ],
+   "interaction_label": "러그 위에 앉기",
+   "model": ""
+  },
+  {
+   "id": "plant_monstera",
+   "name": "화분 식물",
+   "price": 80000,
+   "grid_w": 2,
+   "grid_h": 2,
+   "layer": "FLOOR",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "interaction_label": "물 주기",
+   "model": "plant_monstera"
+  },
+  {
+   "id": "floor_lamp",
+   "name": "플로어 램프",
+   "price": 250000,
+   "grid_w": 2,
+   "grid_h": 2,
+   "layer": "FLOOR",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "interaction_label": "불 켜기",
+   "model": "floor_lamp"
+  },
+  {
+   "id": "side_table",
+   "name": "사이드 테이블",
+   "price": 220000,
+   "grid_w": 2,
+   "grid_h": 2,
+   "layer": "FLOOR",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "interaction_label": "커피 마시기",
+   "model": ""
+  },
+  {
+   "id": "picture_frame",
+   "name": "벽 액자",
+   "price": 120000,
+   "grid_w": 2,
+   "grid_h": 2,
+   "layer": "WALL",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "interaction_label": "그림 감상",
+   "model": ""
+  },
+  {
+   "id": "wall_shelf",
+   "name": "벽 선반",
+   "price": 180000,
+   "grid_w": 4,
+   "grid_h": 1,
+   "layer": "WALL",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     1
+    ],
+    [
+     3,
+     1
+    ]
+   ],
+   "interaction_label": "선반 정리",
+   "model": ""
+  },
+  {
+   "id": "wardrobe",
+   "name": "옷장",
+   "price": 650000,
+   "grid_w": 4,
+   "grid_h": 4,
+   "layer": "FLOOR",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     1,
+     4
+    ],
+    [
+     2,
+     4
+    ]
+   ],
+   "interaction_label": "옷장 정리"
+  }
+ ]
 }

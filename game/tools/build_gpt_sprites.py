@@ -14,10 +14,16 @@ from PIL import Image, ImageFilter, ImageDraw
 import numpy as np
 import json, os
 
-# 소스 우선순위: incoming/ (git 업로드용) → review/gpt_batch (로컬 드롭)
+# 소스 검색: incoming/ (git 업로드) → review/gpt_batch (로컬 드롭) — 파일별 우선순위
 import os as _os
 _CAND = [r'D:/works/realestate/incoming', r'D:/works/realestate/review/gpt_batch']
-SRC = next((d for d in _CAND if _os.path.isdir(d) and any(f.endswith('.png') for f in _os.listdir(d))), _CAND[-1])
+def find_src(fname):
+    for d in _CAND:
+        p = _os.path.join(d, fname)
+        if _os.path.exists(p):
+            return p
+    return _os.path.join(_CAND[-1], fname)
+SRC = _CAND[0]
 OUT = r'D:/works/realestate/game/assets/gpt_sprites'
 os.makedirs(OUT, exist_ok=True)
 
@@ -38,11 +44,28 @@ SLOTS = {
     "picture_frame":  ("벽 액자", 2, 2, 120_000, 0.72, 0.26, "wall", False),
     "wall_shelf":     ("벽 선반", 4, 1, 180_000, 0.60, 0.32, "wall", False),
     "armchair":       ("안락의자", 2, 2, 180_000, 0.36, 0.68, "normal", True),
+    "side_table":     ("사이드 테이블", 2, 2, 220_000, 0.80, 0.62, "normal", True),
+    "wardrobe":       ("옷장", 4, 4, 650_000, 0.02, 0.06, "normal", True),
 }
 
 # 캐릭터 (구매 아님, 상시 배치)
 CHAR = {"c_idle": (0.45, 0.80)}
 
+
+
+def keyout_magenta_img(im_rgb):
+    """PIL Image(RGB) → 투명 RGBA (마젠타 제거, 이진 알파)"""
+    a = np.array(im_rgb.convert('RGB'))
+    r, g, b = a[:, :, 0].astype(np.int32), a[:, :, 1].astype(np.int32), a[:, :, 2].astype(np.int32)
+    mag = (r > 170) & (b > 170) & (g < 120) & (np.abs(r - b) < 70)
+    alpha = np.where(mag, 0, 255).astype(np.uint8)
+    m = Image.fromarray(alpha).filter(ImageFilter.GaussianBlur(1.0))
+    aa = np.where(np.array(m) > 128, 255, 0).astype(np.uint8)
+    out = Image.fromarray(np.dstack([a, aa]), 'RGBA')
+    ys, xs = np.where(aa > 0)
+    if len(xs) == 0:
+        return out
+    return out.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
 
 def keyout_magenta(src_path):
     im = Image.open(src_path).convert('RGBA')
@@ -85,12 +108,12 @@ meta = {"px_per_cell": PX_PER_CELL, "room": {"x": 65, "y": 28, "w": ROOM_W_PX, "
 
 os.makedirs(r'D:/works/realestate/game/assets/concept_room', exist_ok=True)
 # 방 배경 복사 (Godot 임포트용)
-Image.open(os.path.join(SRC, 'room_empty.png')).save(r'D:/works/realestate/game/assets/concept_room/room_empty.png')
+Image.open(find_src('room_empty.png')).save(r'D:/works/realestate/game/assets/concept_room/room_empty.png')
 
 for fid, slot_def in SLOTS.items():
     name, gw, gh, price, sx, sy, layer, shadow = slot_def[:8]
     scl = slot_def[8] if len(slot_def) > 8 else 1.0
-    img = keyout_magenta(os.path.join(SRC, f'f_{fid}.png'))
+    img = keyout_magenta(find_src(f'f_{fid}.png'))
     if shadow:
         img = bake_shadow(img)
     img.save(os.path.join(OUT, f'f_{fid}.png'))
@@ -107,9 +130,28 @@ for fid, slot_def in SLOTS.items():
     }
     print(f'{fid:16s} sprite={img.size}  screen_w={width_px}px')
 
+# 걷기 시트 2x2 → 4프레임
+_sheet = find_src('c_walk_sheet.png')
+if os.path.exists(_sheet):
+    sh = Image.open(_sheet).convert('RGB')
+    sw, shh = sh.size
+    half_w, half_h = sw // 2, shh // 2
+    for idx, (qx, qy) in enumerate([(0,0),(1,0),(0,1),(1,1)]):
+        frame = sh.crop((qx*half_w, qy*half_h, (qx+1)*half_w, (qy+1)*half_h))
+        keyout_frame = keyout_magenta_img(frame)
+        keyout_frame.save(os.path.join(OUT, f'c_walk_{idx}.png'))
+    print('walk sheet split: 4 frames')
+
+# 포즈 스프라이트 (앉음/누움) — 그림자 없이
+for pose in ['c_sit', 'c_lie']:
+    _p = find_src(pose + '.png')
+    if os.path.exists(_p):
+        keyout_magenta_img(Image.open(_p).convert('RGB')).save(os.path.join(OUT, pose + '.png'))
+        print(pose, 'processed')
+
 # 캐릭터
 for cid, (sx, sy) in CHAR.items():
-    img = bake_shadow(keyout_magenta(os.path.join(SRC, f'{cid}.png')), 0.6)
+    img = bake_shadow(keyout_magenta(find_src(f'{cid}.png')), 0.6)
     img.save(os.path.join(OUT, f'{cid}.png'))
     meta.setdefault("characters", {})[cid] = {
         "slot": [sx, sy], "width_px": int(PX_PER_CELL * 0.95),
@@ -117,7 +159,7 @@ for cid, (sx, sy) in CHAR.items():
     print(cid, img.size)
 
 # 반응용 happy도 저장
-img = keyout_magenta(os.path.join(SRC, 'c_happy.png'))
+img = keyout_magenta(find_src('c_happy.png'))
 img.save(os.path.join(OUT, 'c_happy.png'))
 meta.setdefault("characters", {})["c_happy"] = {
     "slot": [0.5, 0.5], "width_px": int(PX_PER_CELL * 1.3),

@@ -307,6 +307,60 @@
    "action": "",
    "interaction_locals": [],
    "interaction_label": ""
+  },
+  "side_table": {
+   "name": "사이드 테이블",
+   "price": 220000,
+   "grid": [
+    2,
+    2
+   ],
+   "slot": [
+    0.8,
+    0.62
+   ],
+   "layer": "normal",
+   "width_px": 117,
+   "sprite": "res://assets/gpt_sprites/f_side_table.png",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     0,
+     2
+    ],
+    [
+     1,
+     2
+    ]
+   ],
+   "interaction_label": "커피 마시기"
+  },
+  "wardrobe": {
+   "name": "옷장",
+   "price": 650000,
+   "grid": [
+    4,
+    4
+   ],
+   "slot": [
+    0.02,
+    0.06
+   ],
+   "layer": "normal",
+   "width_px": 235,
+   "sprite": "res://assets/gpt_sprites/f_wardrobe.png",
+   "action": "LOOK",
+   "interaction_locals": [
+    [
+     1,
+     4
+    ],
+    [
+     2,
+     4
+    ]
+   ],
+   "interaction_label": "옷장 정리"
   }
  },
  "characters": {

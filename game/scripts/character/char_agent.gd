@@ -29,10 +29,14 @@ const ACTIONS := {
 var flow: Node                        # concept_flow 레퍼런스
 var tex_idle: Texture2D
 var tex_walk: Texture2D
+var walk_frames: Array[Texture2D] = []
+var tex_sit: Texture2D
+var tex_lie: Texture2D
 var sprite: TextureRect
 var bubble: Label
 var bubble_bg: PanelContainer
 
+var base_width := 70.0                # 캐릭터 화면 폭 (텍스처 교체시 유지)
 var state := "idle"                   # idle / walking / using
 var step_t := 0.0                     # 스텝 애니메이션 타이머
 var walk_frame := false               # true=걷기폰(다리벌림) false=기립(다리모음)
@@ -54,6 +58,12 @@ func setup(p_flow: Node) -> void:
 	flow = p_flow
 	tex_idle = load("res://assets/gpt_sprites/c_idle.png")
 	tex_walk = load("res://assets/gpt_sprites/c_walk.png")
+	for i in 4:
+		var t: Texture2D = load("res://assets/gpt_sprites/c_walk_%d.png" % i)
+		if t:
+			walk_frames.append(t)
+	tex_sit = load("res://assets/gpt_sprites/c_sit.png")
+	tex_lie = load("res://assets/gpt_sprites/c_lie.png")
 
 	sprite = TextureRect.new()
 	sprite.texture = tex_idle
@@ -80,11 +90,18 @@ func setup(p_flow: Node) -> void:
 	_rebuild_astar()
 
 
+## 텍스처 교체 (캐릭터 폭 유지, 발중심 앵커 유지)
+func _apply_texture(tex: Texture2D) -> void:
+	sprite.texture = tex
+	var h: float = base_width * tex.get_height() / tex.get_width()
+	sprite.size = Vector2(base_width, h)
+	sprite.position = Vector2(-base_width * 0.5, -h)
+	sprite.pivot_offset = sprite.size * 0.5
+
+
 func _resize(w: float) -> void:
-	var h: float = w * tex_idle.get_height() / tex_idle.get_width()
-	sprite.size = Vector2(w, h)
-	sprite.position = Vector2(-w * 0.5, -h)   # 발 중심 앵커
-	sprite.pivot_offset = sprite.size * 0.5   # 회전은 스프라이트 중심 기준
+	base_width = w
+	_apply_texture(sprite.texture if sprite.texture else tex_idle)
 
 
 func place_at_cell(cell: Vector2i) -> void:
@@ -227,24 +244,33 @@ func _walk_step(delta: float) -> void:
 	sprite.flip_h = dir.x < 0
 	# 2프레임 스텝: 걷기폰(다리벌림) ↔ 기립(다리모음) 교대 + 스텝마다 살짝 점프
 	step_t += delta
-	if step_t >= STEP_INTERVAL:
-		step_t -= STEP_INTERVAL
-		walk_frame = not walk_frame
-	sprite.texture = tex_walk if walk_frame else tex_idle
-	sprite.position.y = -sprite.size.y - (3.0 if walk_frame else 0.0)
+	if walk_frames.size() == 4:
+		var idx := int(step_t / STEP_INTERVAL) % 4
+		sprite.texture = walk_frames[idx]
+		sprite.position.y = -sprite.size.y - (3.0 if idx % 2 == 1 else 0.0)
+	else:
+		if step_t >= STEP_INTERVAL:
+			step_t -= STEP_INTERVAL
+			walk_frame = not walk_frame
+		sprite.texture = tex_walk if walk_frame else tex_idle
+		sprite.position.y = -sprite.size.y - (3.0 if walk_frame else 0.0)
 
 
 func _start_using() -> void:
 	state = "using"
 	walk_frame = false
-	sprite.texture = tex_idle
+	_apply_texture(tex_idle)
 	sprite.position.y = -sprite.size.y
+	# 포즈별 전용 스프라이트 (앉음/누움)
+	if use_action.get("pose") == "sit" and tex_sit:
+		_apply_texture(tex_sit)
+	elif use_action.get("pose") == "lie" and tex_lie:
+		_apply_texture(tex_lie)
+		sprite.position.y = -sprite.size.y * 0.5   # 누운 몸 중심이 앵커에 오게
 	# 누운 포즈(침대): 실제 렌더된 가구 스프라이트 rect 중앙에 몸이 얹히도록
 	if use_action.get("pose") == "lie" and use_iid >= 0 and flow.placed_nodes.has(use_iid):
 		var bed_rect: Rect2 = flow.placed_nodes[use_iid].get_rect()
-		var hh: float = sprite.size.y
-		# 중심 피벗 회전 → 몸통 중심 = position + (0, -hh/2) 를 침대 중앙에 맞춤
-		position = bed_rect.get_center() + Vector2(8, hh * 0.5 - 12)
+		position = bed_rect.get_center() + Vector2(8, -8)
 	use_timer = float(use_action["dur"])
 	bubble.text = use_action["label"]
 	bubble_bg.visible = true
@@ -261,19 +287,14 @@ func _bubble_follow() -> void:
 func _use_step(delta: float) -> void:
 	use_timer -= delta
 	_bubble_follow()
-	# 사용 중 미세 몸짓
-	if use_action.get("pose") == "sit":
-		sprite.scale = Vector2(1.0, 0.94)
-	elif use_action.get("pose") == "lie":
-		sprite.rotation_degrees = lerp(sprite.rotation_degrees, 90.0, 0.25)
-		sprite.scale = Vector2(1.3, 1.3)   # 누운 포즈 가독성
-	else:
-		sprite.position.y = -sprite.size.y + sin(bob_t * 3.0) * 1.0
+	# 사용 중 미세 호흡
+	sprite.position.y += sin(bob_t * 3.0) * 0.15
 	if use_timer <= 0:
 		_finish_using()
 
 
 func _finish_using() -> void:
+	_apply_texture(tex_idle)
 	sprite.scale = Vector2.ONE
 	sprite.rotation_degrees = 0.0
 	bubble_bg.visible = false
