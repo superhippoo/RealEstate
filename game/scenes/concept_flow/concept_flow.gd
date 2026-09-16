@@ -95,7 +95,7 @@ var _watchdog_ms := 0
 ## 빌드 식별자 — 화면 좌하단에 항상 표시.
 ## "내가 보는 화면이 어느 빌드인지"가 매순간 확인되어야 스테일 캐시 오판이 없다.
 ## 빌드 수정 시 이 번호를 올리고 ?v= 쿼리 URL과 맞춘다.
-const BUILD_TAG := "v8"
+const BUILD_TAG := "v9"
 
 
 func _build_ui() -> void:
@@ -763,6 +763,12 @@ func _start_placing_from_storage(fid: String) -> void:
 	_update_ghost()
 
 
+
+## 얇은 깔개(바닥에 평평히 깔리는 층) — gpt_slots는 "floor", furniture.json은 "UNDERLAY"로 표기
+func _is_underlay_item(item: Dictionary) -> bool:
+	var lay := str(item.get("layer", "normal")).to_lower()
+	return lay == "underlay" or lay == "floor"
+
 func _find_free_origin(fp: Vector2i, layer: int) -> Vector2i:
 	for gy in range(grid.height - fp.y):
 		for gx in range(grid.width - fp.x):
@@ -831,19 +837,32 @@ func _update_ghost() -> void:
 	var item: Dictionary = slots["items"][placing]
 	var fp := GridModel.footprint_size(item["grid"][0], item["grid"][1], place_rotation)
 	var ok: bool = grid.can_place(fp.x, fp.y, place_origin, place_rotation, _item_layer(placing))
-	var anchor := FloorProjector.footprint_front_center(place_origin, fp.x, fp.y)
-	if item["layer"] == "wall":
-		anchor = FloorProjector.grid_to_img(place_origin.x + fp.x * 0.5, place_origin.y + fp.y)
-	var wpx: float = FloorProjector.footprint_width_px(place_origin, fp.x, fp.y)
-	var scr := _img_to_screen(anchor)
+	var is_un := _is_underlay_item(item)
 	var sc: float = bg.size.x / bg.texture.get_width()
-	var w := wpx * sc
-	var h := w * ghost.texture.get_height() / ghost.texture.get_width()
-	ghost.size = Vector2(w, h)
-	ghost.position = scr - Vector2(w * 0.5, h - GROUND_LIFT_IMG_PX * sc)
+	if is_un and item["layer"] != "wall":
+		# 깔개류 고스트: 발판 다이아몬드 외곽상자에 스트레치 (배치 결과와 동일)
+		var tl := Vector2(1e9, 1e9)
+		var br := Vector2(-1e9, -1e9)
+		for corner in [Vector2i(0, 0), Vector2i(fp.x, 0), Vector2i(fp.x, fp.y), Vector2i(0, fp.y)]:
+			var c: Vector2 = _img_to_screen(FloorProjector.grid_to_img(
+					place_origin.x + corner.x, place_origin.y + corner.y))
+			tl = tl.min(c)
+			br = br.max(c)
+		ghost.size = br - tl
+		ghost.position = tl
+	else:
+		var anchor := FloorProjector.footprint_front_center(place_origin, fp.x, fp.y, true)
+		if item["layer"] == "wall":
+			anchor = FloorProjector.grid_to_img(place_origin.x + fp.x * 0.5, place_origin.y + fp.y)
+		var wpx: float = FloorProjector.footprint_width_px(place_origin, fp.x, fp.y)
+		var scr := _img_to_screen(anchor)
+		var w := wpx * sc
+		var h := w * ghost.texture.get_height() / ghost.texture.get_width()
+		ghost.size = Vector2(w, h)
+		ghost.position = scr - Vector2(w * 0.5, h - GROUND_LIFT_IMG_PX * sc)
+		if item["layer"] == "wall":
+			ghost.position.y -= h * 0.55
 	ghost.modulate = Color(0.5, 1.0, 0.5, 0.85) if ok else Color(1.0, 0.35, 0.3, 0.85)
-	if item["layer"] == "wall":
-		ghost.position.y -= h * 0.55
 	overlay.highlight_origin = place_origin
 	overlay.highlight_size = fp
 	overlay.highlight_ok = ok
@@ -937,11 +956,27 @@ const GROUND_LIFT_IMG_PX := 0.0
 
 func _apply_placement_transform(node: TextureRect, p: GridModel.Placement) -> void:
 	var fp := GridModel.footprint_size(p.def_w, p.def_h, p.rotation)
-	var anchor := FloorProjector.footprint_front_center(p.origin, fp.x, fp.y)
+	var item_d: Dictionary = slots["items"][p.def_id]
+	var is_underlay := _is_underlay_item(item_d)
+	var sc: float = bg.size.x / bg.texture.get_width()
+	if is_underlay and p.layer != GridModel.Layer.WALL:
+		# 깔개류: 타원을 발판 다이아몬드 외곽상자에 정확히 매핑 → 정의상 완전 착지
+		var tl := Vector2(1e9, 1e9)
+		var br := Vector2(-1e9, -1e9)
+		for corner in [Vector2i(0, 0), Vector2i(fp.x, 0), Vector2i(fp.x, fp.y), Vector2i(0, fp.y)]:
+			var c: Vector2 = _img_to_screen(FloorProjector.grid_to_img(
+					p.origin.x + corner.x, p.origin.y + corner.y))
+			tl = tl.min(c)
+			br = br.max(c)
+		node.size = br - tl
+		node.position = tl
+		node.set_meta("sort_y", tl.y)
+		node.flip_h = p.rotation == 90 or p.rotation == 270
+		return
+	var anchor := FloorProjector.footprint_front_center(p.origin, fp.x, fp.y, true)
 	if p.layer == GridModel.Layer.WALL:
 		anchor = FloorProjector.grid_to_img(p.origin.x + fp.x * 0.5, p.origin.y + fp.y)
 	var wpx: float = FloorProjector.footprint_width_px(p.origin, fp.x, fp.y)
-	var sc: float = bg.size.x / bg.texture.get_width()
 	var w := wpx * sc
 	var h := w * node.texture.get_height() / node.texture.get_width()
 	node.size = Vector2(w, h)
@@ -951,9 +986,8 @@ func _apply_placement_transform(node: TextureRect, p: GridModel.Placement) -> vo
 		node.position.y = maxf(node.position.y, 6.0)
 	node.set_meta("sort_y", _img_to_screen(anchor).y)   # 화면 y로 통일 (캐릭터와 같은 단위)
 	node.flip_h = p.rotation == 90 or p.rotation == 270
-	# 바닥 가구: 발판 다이아몬드 접지 그림자 (평면 스프라이트-아이소메트릭 바닥 연결)
-	var item_d: Dictionary = slots["items"][p.def_id]
-	if str(item_d.get("layer", "FLOOR")).to_upper() != "UNDERLAY":
+	# 바닥 가구: 발판 다이아몬드 접지 그림자 (깔개류는 평평하게 깔리므로 제외)
+	if not is_underlay and p.layer != GridModel.Layer.WALL:
 		_update_ground_shadow(node, p, fp)
 
 

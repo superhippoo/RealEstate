@@ -53,11 +53,13 @@ static func footprint_width_px(origin: Vector2i, w: int, h: int) -> float:
 
 ## 발판 앞변 중심 (스프라이트 바닥 앵커용) + 착지 보정.
 ## 바닥 앞변은 우측으로 갈수록 화면에서 낮아지는 대각선이라, 평평한 하단의
-## 스프라이트를 중심점에만 얹으면 왼쪽이 뜬다. 낙차의 절반만큼 내려서
-## 좌우 공극/매립을 균형 잡는다(그림자 다이아몬드가 나머지를 시각적으로 메움).
-static func footprint_front_center(origin: Vector2i, w: int, h: int) -> Vector2:
+## 스프라이트를 중심점에 얹으면 한쪽 끝이 반드시 뜬다(측정: 소파 +25px).
+## full_sink=true(일반 가구): 앞변 최저점에 하단을 맞춰 공중부양을 0으로.
+##   남는 파묻힘(앞쪽 바닥 가림)은 아이소메트릭 관용 표현으로 감수.
+## full_sink=false(러그 등 얇은 깔개): 중심 유지 — 깔개가 앞으로 삐져나가면 티가 난다.
+static func footprint_front_center(origin: Vector2i, w: int, h: int, full_sink := true) -> Vector2:
 	var west := grid_to_img(origin.x, origin.y + h)
 	var east := grid_to_img(origin.x + w, origin.y + h)
 	var mid := (west + east) * 0.5
-	mid.y += (east.y - west.y) * 0.30   # 낙차의 절반 × 싱크 바이어스 — 브리지 그림자가 잔여 갭을 메움
+	mid.y += (east.y - west.y) * (0.5 if full_sink else 0.25)
 	return mid
