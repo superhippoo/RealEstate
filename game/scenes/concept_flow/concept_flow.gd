@@ -937,6 +937,28 @@ func _apply_placement_transform(node: TextureRect, p: GridModel.Placement) -> vo
 		node.position.y = maxf(node.position.y, 6.0)
 	node.set_meta("sort_y", _img_to_screen(anchor).y)   # 화면 y로 통일 (캐릭터와 같은 단위)
 	node.flip_h = p.rotation == 90 or p.rotation == 270
+	# 바닥 가구: 발판 다이아몬드 접지 그림자 (평면 스프라이트-아이소메트릭 바닥 연결)
+	var item_d: Dictionary = slots["items"][p.def_id]
+	if str(item_d.get("layer", "FLOOR")).to_upper() != "UNDERLAY":
+		_update_ground_shadow(node, p, fp)
+
+
+## 발판 투영 다이아몬드의 부드러운 그림자 — 가구가 바닥에 닿아 보이게 하는 착지 연출
+func _update_ground_shadow(node: TextureRect, p: GridModel.Placement, fp: Vector2i) -> void:
+	var sh: Polygon2D = null
+	if node.has_meta("ground_shadow"):
+		sh = node.get_meta("ground_shadow")
+	if sh == null:
+		sh = Polygon2D.new()
+		sh.show_behind_parent = true
+		node.add_child(sh)
+		node.set_meta("ground_shadow", sh)
+	var pts: PackedVector2Array = PackedVector2Array()
+	for corner in [Vector2i(0, 0), Vector2i(fp.x, 0), Vector2i(fp.x, fp.y), Vector2i(0, fp.y)]:
+		var img := FloorProjector.grid_to_img(p.origin.x + corner.x, p.origin.y + corner.y)
+		pts.append(_img_to_screen(img) - node.position + Vector2(0, 5))
+	sh.polygon = pts
+	sh.color = Color(0.16, 0.10, 0.05, 0.20)
 
 
 func _sort_furniture() -> void:

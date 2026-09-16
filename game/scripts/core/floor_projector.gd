@@ -51,6 +51,13 @@ static func footprint_width_px(origin: Vector2i, w: int, h: int) -> float:
 	return a.distance_to(b)
 
 
-## 발판 앞변 중심 (스프라이트 바닥 앵커용)
+## 발판 앞변 중심 (스프라이트 바닥 앵커용) + 착지 보정.
+## 바닥 앞변은 우측으로 갈수록 화면에서 낮아지는 대각선이라, 평평한 하단의
+## 스프라이트를 중심점에만 얹으면 왼쪽이 뜬다. 낙차의 절반만큼 내려서
+## 좌우 공극/매립을 균형 잡는다(그림자 다이아몬드가 나머지를 시각적으로 메움).
 static func footprint_front_center(origin: Vector2i, w: int, h: int) -> Vector2:
-	return grid_to_img(origin.x + w * 0.5, origin.y + h)
+	var west := grid_to_img(origin.x, origin.y + h)
+	var east := grid_to_img(origin.x + w, origin.y + h)
+	var mid := (west + east) * 0.5
+	mid.y += (east.y - west.y) * 0.25   # 낙차의 절반 × 싱크 바이어스 0.5
+	return mid
