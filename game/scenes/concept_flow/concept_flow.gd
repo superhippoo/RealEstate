@@ -42,7 +42,7 @@ var place_rotation := 0
 var ghost: TextureRect
 var overlay: Control
 var bottom_bar: HBoxContainer
-var place_bar: HBoxContainer
+var place_bar: VBoxContainer
 var floaties: Control
 
 var slots: Dictionary = {}
@@ -162,25 +162,25 @@ func _build_ui() -> void:
 	bottom_bar.add_child(sidejob_btn)
 	add_child(bottom_bar)
 
-	# 배치 모드 버튼
-	place_bar = HBoxContainer.new()
+	# 배치 모드 버튼 — 우측 가장자리 세로 스택.
+	# 하단 바닥 앞줄(다이아몬드 하단 y~560-693)을 가리지 않게 바닥 밖 우측에 둔다
+	place_bar = VBoxContainer.new()
 	place_bar.name = "PlaceBar"
-	place_bar.position = Vector2(24, 720 - 92)
-	place_bar.size = Vector2(1232, 80)
-	place_bar.add_theme_constant_override("separation", 12)
-	var pl := Control.new(); pl.custom_minimum_size.x = 24
-	place_bar.add_child(pl)
+	place_bar.position = Vector2(1052, 436)
+	place_bar.size = Vector2(212, 240)
+	place_bar.add_theme_constant_override("separation", 8)
+	var hint_l := _label("빈 칸을 눌러\n배치", 20)
+	hint_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	place_bar.add_child(hint_l)
 	var rot := _mk_button("회전 ↻", Callable(self, "_rotate_placing"))
-	rot.custom_minimum_size = Vector2(150, 64)
+	rot.custom_minimum_size = Vector2(200, 52)
 	place_bar.add_child(rot)
 	var keep := _mk_button("보관함에 넣기", Callable(self, "_store_placing"))
-	keep.custom_minimum_size = Vector2(210, 64)
+	keep.custom_minimum_size = Vector2(200, 52)
 	place_bar.add_child(keep)
 	var cancel := _mk_button("취소 (환불)", Callable(self, "_cancel_placing"))
-	cancel.custom_minimum_size = Vector2(210, 64)
+	cancel.custom_minimum_size = Vector2(200, 52)
 	place_bar.add_child(cancel)
-	var hint_l := _label("빈 칸을 눌러 배치", 22)
-	place_bar.add_child(hint_l)
 	place_bar.visible = false
 	add_child(place_bar)
 
@@ -943,7 +943,9 @@ func _apply_placement_transform(node: TextureRect, p: GridModel.Placement) -> vo
 		_update_ground_shadow(node, p, fp)
 
 
-## 발판 투영 다이아몬드의 부드러운 그림자 — 가구가 바닥에 닿아 보이게 하는 착지 연출
+## 발판 투영 다이아몬드 + 스프라이트 하단까지 잇는 브리지 그림자.
+## 평평한 하단의 스프라이트를 대각선 바닥에 얹을 때 생기는 좌우 어긋남을
+## 그림자가 메워, 어느 쪽으로도 '떠 보이지 않게' 한다.
 func _update_ground_shadow(node: TextureRect, p: GridModel.Placement, fp: Vector2i) -> void:
 	var sh: Polygon2D = null
 	if node.has_meta("ground_shadow"):
@@ -958,7 +960,26 @@ func _update_ground_shadow(node: TextureRect, p: GridModel.Placement, fp: Vector
 		var img := FloorProjector.grid_to_img(p.origin.x + corner.x, p.origin.y + corner.y)
 		pts.append(_img_to_screen(img) - node.position + Vector2(0, 5))
 	sh.polygon = pts
-	sh.color = Color(0.16, 0.10, 0.05, 0.20)
+	sh.color = Color(0.16, 0.10, 0.05, 0.22)
+
+	# 브리지: 스프라이트 하단 평선 ↔ 바닥 접지 대각선(앞변) 연결
+	var fw: Vector2 = _img_to_screen(FloorProjector.grid_to_img(
+			p.origin.x, p.origin.y + fp.y)) - node.position + Vector2(0, 5)
+	var fe: Vector2 = _img_to_screen(FloorProjector.grid_to_img(
+			p.origin.x + fp.x, p.origin.y + fp.y)) - node.position + Vector2(0, 5)
+	var bl := Vector2(0.0, minf(node.size.y, fw.y - 2.0))
+	var br := Vector2(node.size.x, minf(node.size.y, fe.y - 2.0))
+	var bridge: PackedVector2Array = PackedVector2Array([bl, br, fe, fw])
+	var shb: Polygon2D = null
+	if node.has_meta("shadow_bridge"):
+		shb = node.get_meta("shadow_bridge")
+	if shb == null:
+		shb = Polygon2D.new()
+		shb.show_behind_parent = true
+		node.add_child(shb)
+		node.set_meta("shadow_bridge", shb)
+	shb.polygon = bridge
+	shb.color = Color(0.16, 0.10, 0.05, 0.13)
 
 
 func _sort_furniture() -> void:

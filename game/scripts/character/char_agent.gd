@@ -264,16 +264,16 @@ func _start_using() -> void:
 	walk_frame = false
 	_apply_texture(tex_idle)
 	sprite.position.y = -sprite.size.y
-	# 포즈별 전용 스프라이트 (앉음/누움)
-	if use_action.get("pose") == "sit" and tex_sit:
-		_apply_texture(tex_sit)
-	elif use_action.get("pose") == "lie" and tex_lie:
+	# 포즈별 전용 스프라이트 — 앉음(c_sit)은 스프라이트에 소파가 통째로 박혀 있어
+	# '유령 소파'처럼 보이는 문제로 사용 중단. 앉음 행동도 누움(c_lie: 사람만)으로
+	# 처리해 가구 위에 늘어져 쉬는 연출로 통일 (말풍선 텍스트와도 일치).
+	if tex_lie and (use_action.get("pose") == "lie" or use_action.get("pose") == "sit"):
 		_apply_texture(tex_lie)
 		sprite.position.y = -sprite.size.y * 0.5   # 누운 몸 중심이 앵커에 오게
-	# 누운 포즈(침대): 실제 렌더된 가구 스프라이트 rect 중앙에 몸이 얹히도록
-	if use_action.get("pose") == "lie" and use_iid >= 0 and flow.placed_nodes.has(use_iid):
-		var bed_rect: Rect2 = flow.placed_nodes[use_iid].get_rect()
-		position = bed_rect.get_center() + Vector2(8, -8)
+		# 가구(침대/소파 등) 스프라이트 rect 중앙 위에 몸이 얹히도록
+		if use_iid >= 0 and flow.placed_nodes.has(use_iid):
+			var fur_rect: Rect2 = flow.placed_nodes[use_iid].get_rect()
+			position = fur_rect.get_center() + Vector2(0, -10)
 	use_timer = float(use_action["dur"])
 	bubble.text = use_action["label"]
 	bubble_bg.visible = true

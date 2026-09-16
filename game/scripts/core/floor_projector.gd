@@ -59,5 +59,5 @@ static func footprint_front_center(origin: Vector2i, w: int, h: int) -> Vector2:
 	var west := grid_to_img(origin.x, origin.y + h)
 	var east := grid_to_img(origin.x + w, origin.y + h)
 	var mid := (west + east) * 0.5
-	mid.y += (east.y - west.y) * 0.25   # 낙차의 절반 × 싱크 바이어스 0.5
+	mid.y += (east.y - west.y) * 0.30   # 낙차의 절반 × 싱크 바이어스 — 브리지 그림자가 잔여 갭을 메움
 	return mid

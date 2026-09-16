@@ -110,7 +110,30 @@ func _run() -> void:
 		await _frames(40)
 		await _click_node(ok)
 	await _frames(10)
+	# 소파도 함께 검증 (사용자 제보 품목)
+	await _click_node(_find_button(flow, "가구 상점"))
+	await _frames(3)
+	var sofa_b := _find_card_buy(flow, "2인 소파")
+	if sofa_b:
+		await _click_node(sofa_b)
+		await _frames(5)
+		print("GROUND|sofa buy placing='%s' shop=%s popup=%s" % [
+			flow.placing, flow.shop_panel.visible, flow.popup.visible])
+		var spt: Vector2 = flow.grid_to_screen(Vector2i(10, 10))
+		await _mouse_to(spt)
+		await _frames(2)
+		var hovered = flow.get_viewport().gui_get_hovered_control()
+		print("GROUND|hovered=%s ghost=%s overlay=%s dim=%s rh=%s popup=%s shop=%s" % [
+			hovered.get_path() if hovered else "null", flow.ghost.visible, flow.overlay.visible,
+			flow.dim.visible, flow.rotate_hint.visible, flow.popup.visible, flow.shop_panel.visible])
+		print("GROUND|ghost origin=%s mod=%s roundtrip=%s" % [
+			flow.place_origin, flow.ghost.modulate, flow.screen_to_cell(spt)])
+		await _click_at(spt)
+		await _frames(10)
+		print("GROUND|sofa placed n=%d placing='%s' storage=%s toast='%s' bottom=%s place_bar=%s" % [
+			flow.grid.placements.size(), flow.placing, flow.gs.storage, flow.toast.text,
+			flow.bottom_bar.visible, flow.place_bar.visible])
 	var img := get_root().get_texture().get_image()
 	img.save_png("res://../review/grounding_after.png")
-	print("GROUND|saved|bed cell (3,2) placements=%d" % flow.grid.placements.size())
+	print("GROUND|saved|bed(3,2)+sofa(6,8) placements=%d" % flow.grid.placements.size())
 	quit(0)
