@@ -92,7 +92,21 @@ var _watchdog_ms := 0
 
 
 # ================================================================ UI 구성
+## 빌드 식별자 — 화면 좌하단에 항상 표시.
+## "내가 보는 화면이 어느 빌드인지"가 매순간 확인되어야 스테일 캐시 오판이 없다.
+## 빌드 수정 시 이 번호를 올리고 ?v= 쿼리 URL과 맞춘다.
+const BUILD_TAG := "v8"
+
+
 func _build_ui() -> void:
+	var ver_shadow := _label(BUILD_TAG, 14, Color(0, 0, 0, 0.45))
+	ver_shadow.position = Vector2(11, 720 - 23)
+	ver_shadow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(ver_shadow)
+	var ver := _label(BUILD_TAG, 14, Color(1, 1, 1, 0.55))
+	ver.position = Vector2(10, 720 - 24)
+	ver.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(ver)
 	bg = TextureRect.new()
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
